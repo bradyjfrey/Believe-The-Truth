@@ -1,0 +1,27 @@
+{
+  "name": "Believe the Truth",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$path": "src/ReplicatedStorage"
+    },
+    "ReplicatedFirst": {
+      "$path": "src/ReplicatedFirst"
+    },
+    "ServerScriptService": {
+      "$path": "src/ServerScriptService"
+    },
+    "ServerStorage": {
+      "$path": "src/ServerStorage"
+    },
+    "StarterGui": {
+      "$path": "src/StarterGui"
+    },
+    "StarterPack": {
+      "$path": "src/StarterPack"
+    },
+    "StarterPlayer": {
+      "$path": "src/StarterPlayer"
+    }
+  }
+}
