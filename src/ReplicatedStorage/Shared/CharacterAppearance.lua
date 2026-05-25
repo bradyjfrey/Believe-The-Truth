@@ -248,6 +248,11 @@ function CharacterAppearance.apply(player, characterName)
         end
 
         humanoid:ApplyDescription(desc)
+
+        -- Wait one frame so Roblox finishes its internal re-render. Without
+        -- this, per-part Color/Material overrides below get clobbered by the
+        -- description system finishing its work.
+        task.wait()
     end
 
     -- 2. Per-part color overrides — applied AFTER the description so they
