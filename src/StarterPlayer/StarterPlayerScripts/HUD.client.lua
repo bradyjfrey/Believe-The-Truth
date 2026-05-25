@@ -29,11 +29,11 @@ screenGui.IgnoreGuiInset = false
 screenGui.DisplayOrder = 5
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
--- Top-center timer
+-- Bottom-center timer
 local timerFrame = Instance.new("Frame")
 timerFrame.Size = UDim2.fromOffset(300, 64)
-timerFrame.Position = UDim2.new(0.5, 0, 0, 16)
-timerFrame.AnchorPoint = Vector2.new(0.5, 0)
+timerFrame.Position = UDim2.new(0.5, 0, 1, -24)
+timerFrame.AnchorPoint = Vector2.new(0.5, 1)
 timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
 timerFrame.BackgroundTransparency = 0.1
 timerFrame.BorderSizePixel = 0

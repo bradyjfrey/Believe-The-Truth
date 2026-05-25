@@ -91,7 +91,7 @@ A boy in normal Roblox proportions. Color palette uses two peach-themed Pantones
 | Katana blade | `#c0c0c0` | Held in right hand, blade pointing down |
 | Katana hilt wrap | `#2a1f15` | Dark wrap |
 | Katana tsuba (guard) | `#f8b892` | Peach to match the palette |
-| Hair | `#633d4a` | Cropped, shaggy — Creator Store asset ID `12401269941` |
+| Hair | `#633d4a` | Cropped, shaggy — Avatar Marketplace asset ID `9244033194` |
 | Eyes | `#608666` | Muted green — TODO: needs a custom face decal upload |
 
 ### Passive — Bird's Eye View
@@ -148,7 +148,7 @@ Tall, geisha-styled woman with a dramatically stretched neck. Her base form make
 | Obi sash | `#4a0e0e` | Darker red, knot in front |
 | Feet / sandals | `#1a0a0a` | Near-black |
 | Folding fan | `#b22222` | Red, held in left hand |
-| Hair | black, long, hair ornament with red beads | TODO: catalog hair accessory ID |
+| Hair | comes from bundle | Bundle `13358640198` likely supplies hair; hair ornament with red beads not yet found in marketplace (deferred) |
 | Face | white painted, red eyes, dark lips/teeth | TODO: custom face decal |
 | Arm tattoos (dragons, waves) | dark | TODO: decal uploads |
 
@@ -230,7 +230,7 @@ Glitchy, glowing schoolgirl monstrosity in a dirty Japanese elementary-school un
 | Cleaver blade | `#c0c0c0` | Silver, held in right hand |
 | Cleaver handle | `#1a1a1a` | Black |
 | Pop-up particles | `#c81818` | Drifting red particles around her body (placeholder sparkle texture until real pop-up icon uploads) |
-| Hair | dark brown, messy, medium | TODO: catalog accessory ID |
+| Hair | red (placeholder) | Avatar Marketplace asset ID `9244114211` — going red for now |
 | Face | red glitch, no clear features | TODO: custom face decal |
 | Knee socks (white, dirty) | — | TODO: needs shirt/pants template with socks baked in |
 

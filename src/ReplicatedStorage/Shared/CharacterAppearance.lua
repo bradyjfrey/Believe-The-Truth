@@ -55,7 +55,7 @@ CharacterAppearance.Data = {
             },
         },
         Catalog = {
-            Hair  = "12401269941",          -- Brady-picked: cropped shaggy hair from Creator Store
+            Hair  = "9244033194",           -- Brady-picked: shaggy hair from Avatar Marketplace
             -- TODO when art lands:
             -- Face  = "rbxassetid://...",  -- spec: green eyes #608666
             -- Shirt = "rbxassetid://...",  -- happi coat texture
@@ -152,8 +152,8 @@ CharacterAppearance.Data = {
             {Type = "GlitchPopupParticles"},
         },
         Catalog = {
+            Hair  = "9244114211",            -- Brady-picked: red hair (placeholder until proper dark-brown messy hair lands)
             -- TODO when art lands:
-            -- Hair  = "rbxassetid://...",  -- spec: dark brown, messy, medium length
             -- Face  = "rbxassetid://...",  -- spec: red glitchy face, no features visible
             -- Shirt = "rbxassetid://...",  -- spec: sailor uniform top with green collar, dirty
             -- Pants = "rbxassetid://...",  -- spec: dark teal skirt + white knee socks
@@ -458,7 +458,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         blade.CanCollide = false
         blade.Massless = true
         blade.Parent = parent
-        weldTo(blade, rightHand, CFrame.new(0.4, -1.3, 0))
+        weldTo(blade, rightHand, CFrame.new(0.4, 1.3, 0))
 
         local handle = Instance.new("Part")
         handle.Name = "CleaverHandle"
@@ -468,7 +468,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         handle.CanCollide = false
         handle.Massless = true
         handle.Parent = parent
-        weldTo(handle, rightHand, CFrame.new(0, -0.3, 0))
+        weldTo(handle, rightHand, CFrame.new(0, 0.3, 0))
 
     elseif spec.Type == "GlitchPopupParticles" then
         -- Tiny red popup-like particles drifting around her body, evoking the
@@ -490,10 +490,11 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         emitter.Parent = upperTorso
 
     elseif spec.Type == "SwordInHand" then
-        -- Katana held in the right hand, blade pointing down. It'll swing
-        -- naturally with the arm animation.
-        local rightHand = character:FindFirstChild("RightHand")
-        if not rightHand then return end
+        -- Katana held in the LEFT hand (per ref drawing), blade pointing down.
+        -- The hand's local +Y axis points along the fingers (downward in
+        -- world space when arms are at rest), so we use POSITIVE Y offsets.
+        local leftHand = character:FindFirstChild("LeftHand")
+        if not leftHand then return end
 
         local blade = Instance.new("Part")
         blade.Name = "KatanaBlade"
@@ -503,7 +504,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         blade.CanCollide = false
         blade.Massless = true
         blade.Parent = parent
-        weldTo(blade, rightHand, CFrame.new(0, -2.3, 0))
+        weldTo(blade, leftHand, CFrame.new(0, 2.3, 0))
 
         local hilt = Instance.new("Part")
         hilt.Name = "KatanaHilt"
@@ -513,7 +514,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         hilt.CanCollide = false
         hilt.Massless = true
         hilt.Parent = parent
-        weldTo(hilt, rightHand, CFrame.new(0, -0.3, 0))
+        weldTo(hilt, leftHand, CFrame.new(0, 0.3, 0))
 
         -- Tsuba (circular guard at base of blade). Cylinder shape — its long
         -- axis is X, so we rotate it 90° around Z to make it a flat disc.
@@ -526,7 +527,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         tsuba.CanCollide = false
         tsuba.Massless = true
         tsuba.Parent = parent
-        weldTo(tsuba, rightHand, CFrame.new(0, -0.55, 0) * CFrame.Angles(0, 0, math.rad(90)))
+        weldTo(tsuba, leftHand, CFrame.new(0, 0.55, 0) * CFrame.Angles(0, 0, math.rad(90)))
     end
 end
 

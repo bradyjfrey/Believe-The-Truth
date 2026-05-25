@@ -74,6 +74,7 @@ Constants.Momotaro = {
         PeelLifetimeSeconds = 60,
         SlipSeconds = 2,             -- how long a Yokai is ragdolled after slipping
         SaruEatSeconds = 0.5,        -- short delay so it looks like Saru ate it
+        SaruAssetId = 9230969826,    -- Creator Store character model for Saru the monkey
     },
 
     KibiDango = {
@@ -89,7 +90,7 @@ Constants.Momotaro = {
         -- Passive: Kijiro the pheasant pings Yokai locations every so often.
         HighlightSeconds = 6.5,
         IntervalSeconds = 45,
-        KijiroAssetId = 16765961201,  -- Creator Store model for Kijiro the bird
+        KijiroAssetId = 13656715867,  -- Creator Store model for Kijiro the bird (replaced earlier horror-duck asset)
         FollowOffset = Vector3.new(2, 4, -2),  -- bird position relative to Momotaro
     },
 }

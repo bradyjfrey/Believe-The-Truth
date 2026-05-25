@@ -331,7 +331,7 @@ Momotaro.Abilities.MessyEater = function(player, params)
     local saruPos = rootPart.Position - Vector3.new(0, 2, 0)
     local saru = spawnCompanion(
         "Saru",
-        nil,                              -- no asset ID yet — Brady will provide later
+        M.MessyEater.SaruAssetId,
         Color3.fromRGB(240, 220, 80),     -- yellow placeholder fallback
         Vector3.new(2, 2, 2),
         saruPos,
