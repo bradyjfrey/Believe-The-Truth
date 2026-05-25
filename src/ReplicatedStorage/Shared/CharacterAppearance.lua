@@ -492,38 +492,34 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         emitter.Parent = upperTorso
 
     elseif spec.Type == "SwordInHand" then
-        -- Katana held in the LEFT hand, blade pointing FORWARD (away from
-        -- the body) like he's about to swing — not hanging at his side.
-        -- The blade's long axis is Z so the natural forward direction from
-        -- the hand wraps the geometry correctly.
-        local leftHand = character:FindFirstChild("LeftHand")
-        if not leftHand then return end
+        -- Katana held in the RIGHT hand (per ref drawing), blade pointing down.
+        -- The hand's local +Y axis points along the fingers (downward in
+        -- world space when arms are at rest), so we use POSITIVE Y offsets.
+        local rightHand = character:FindFirstChild("RightHand")
+        if not rightHand then return end
 
         local blade = Instance.new("Part")
         blade.Name = "KatanaBlade"
-        blade.Size = Vector3.new(0.12, 0.4, 4)
+        blade.Size = Vector3.new(0.12, 4, 0.4)
         blade.Color = spec.BladeColor
         blade.Material = Enum.Material.Metal
         blade.CanCollide = false
         blade.Massless = true
         blade.Parent = parent
-        -- -Z in hand-local space is "forward" (away from the wrist) when the
-        -- arm is at rest. Push the blade 2.3 studs out from the hand.
-        weldTo(blade, leftHand, CFrame.new(0, 0, -2.3))
+        weldTo(blade, rightHand, CFrame.new(0, 2.3, 0))
 
         local hilt = Instance.new("Part")
         hilt.Name = "KatanaHilt"
-        hilt.Size = Vector3.new(0.2, 0.4, 0.9)
+        hilt.Size = Vector3.new(0.2, 0.9, 0.4)
         hilt.Color = spec.HiltColor
         hilt.Material = Enum.Material.Fabric
         hilt.CanCollide = false
         hilt.Massless = true
         hilt.Parent = parent
-        weldTo(hilt, leftHand, CFrame.new(0, 0, -0.3))
+        weldTo(hilt, rightHand, CFrame.new(0, 0.3, 0))
 
-        -- Tsuba (circular guard between the hilt and the blade). Cylinder's
-        -- long axis is X — we want it as a flat disc perpendicular to the
-        -- blade's Z direction, so rotate 90° around Y.
+        -- Tsuba (circular guard at base of blade). Cylinder shape — its long
+        -- axis is X, so we rotate it 90° around Z to make it a flat disc.
         local tsuba = Instance.new("Part")
         tsuba.Name = "KatanaTsuba"
         tsuba.Shape = Enum.PartType.Cylinder
@@ -533,7 +529,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         tsuba.CanCollide = false
         tsuba.Massless = true
         tsuba.Parent = parent
-        weldTo(tsuba, leftHand, CFrame.new(0, 0, -0.55) * CFrame.Angles(0, math.rad(90), 0))
+        weldTo(tsuba, rightHand, CFrame.new(0, 0.55, 0) * CFrame.Angles(0, 0, math.rad(90)))
     end
 end
 
