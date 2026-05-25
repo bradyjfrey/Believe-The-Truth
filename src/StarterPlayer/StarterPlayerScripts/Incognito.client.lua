@@ -18,48 +18,48 @@ local localPlayer = Players.LocalPlayer
 ------------------------------------------------------------------------------
 
 local function applyTransparency(player, transparency)
-    local character = player.Character
-    if not character then return end
+	local character = player.Character
+	if not character then return end
 
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.LocalTransparencyModifier = transparency
-        end
-    end
+	for _, part in ipairs(character:GetDescendants()) do
+		if part:IsA("BasePart") then
+			part.LocalTransparencyModifier = transparency
+		end
+	end
 
-    -- Hide the floating name + health bar when fully invisible.
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        humanoid.NameDisplayDistance = transparency >= 1 and 0 or 100
-        humanoid.HealthDisplayDistance = transparency >= 1 and 0 or 100
-    end
+	-- Hide the floating name + health bar when fully invisible.
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid.NameDisplayDistance = transparency >= 1 and 0 or 100
+		humanoid.HealthDisplayDistance = transparency >= 1 and 0 or 100
+	end
 end
 
 local function updatePlayer(player)
-    local incognito = player:GetAttribute("Incognito")
-    if not incognito then
-        applyTransparency(player, 0)
-        return
-    end
-    if player == localPlayer then
-        -- Self-view: semi-transparent so you can still see what you're doing.
-        applyTransparency(player, 0.7)
-    else
-        -- Everyone else: fully invisible.
-        applyTransparency(player, 1)
-    end
+	local incognito = player:GetAttribute("Incognito")
+	if not incognito then
+		applyTransparency(player, 0)
+		return
+	end
+	if player == localPlayer then
+		-- Self-view: semi-transparent so you can still see what you're doing.
+		applyTransparency(player, 0.7)
+	else
+		-- Everyone else: fully invisible.
+		applyTransparency(player, 1)
+	end
 end
 
 local function watchPlayer(player)
-    player:GetAttributeChangedSignal("Incognito"):Connect(function()
-        updatePlayer(player)
-    end)
-    player.CharacterAdded:Connect(function()
-        -- Wait a moment for parts to load, then re-apply.
-        task.wait(0.1)
-        updatePlayer(player)
-    end)
-    if player.Character then updatePlayer(player) end
+	player:GetAttributeChangedSignal("Incognito"):Connect(function()
+		updatePlayer(player)
+	end)
+	player.CharacterAdded:Connect(function()
+		-- Wait a moment for parts to load, then re-apply.
+		task.wait(0.1)
+		updatePlayer(player)
+	end)
+	if player.Character then updatePlayer(player) end
 end
 
 for _, p in ipairs(Players:GetPlayers()) do watchPlayer(p) end

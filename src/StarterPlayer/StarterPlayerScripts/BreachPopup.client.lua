@@ -67,9 +67,9 @@ closeButton.TextScaled = true
 closeButton.Parent = popup
 
 closeButton.MouseButton1Click:Connect(function()
-    if not localPlayer:GetAttribute("BreachPopupActive") then return end
-    BreachClose:FireServer()
-    screenGui.Enabled = false
+	if not localPlayer:GetAttribute("BreachPopupActive") then return end
+	BreachClose:FireServer()
+	screenGui.Enabled = false
 end)
 
 ------------------------------------------------------------------------------
@@ -77,7 +77,7 @@ end)
 ------------------------------------------------------------------------------
 
 local function update()
-    screenGui.Enabled = localPlayer:GetAttribute("BreachPopupActive") == true
+	screenGui.Enabled = localPlayer:GetAttribute("BreachPopupActive") == true
 end
 
 localPlayer:GetAttributeChangedSignal("BreachPopupActive"):Connect(update)

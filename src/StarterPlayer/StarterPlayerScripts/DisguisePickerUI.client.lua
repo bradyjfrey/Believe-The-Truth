@@ -80,7 +80,7 @@ closeButton.TextScaled = true
 closeButton.Parent = panel
 
 local function close()
-    screenGui.Enabled = false
+	screenGui.Enabled = false
 end
 closeButton.MouseButton1Click:Connect(close)
 
@@ -89,37 +89,37 @@ closeButton.MouseButton1Click:Connect(close)
 ------------------------------------------------------------------------------
 
 local function populate()
-    for _, child in ipairs(scroller:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
+	for _, child in ipairs(scroller:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
 
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player:GetAttribute("Team") == "Warden" then
-            local row = Instance.new("TextButton")
-            row.Size = UDim2.new(1, 0, 0, 60)
-            row.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
-            row.TextColor3 = Color3.fromRGB(255, 255, 255)
-            row.Font = Enum.Font.Gotham
-            row.TextScaled = true
-            local suffix = player.Character and "" or "  (dead)"
-            row.Text = player.DisplayName .. suffix
-            row.Parent = scroller
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player:GetAttribute("Team") == "Warden" then
+			local row = Instance.new("TextButton")
+			row.Size = UDim2.new(1, 0, 0, 60)
+			row.BackgroundColor3 = Color3.fromRGB(50, 50, 65)
+			row.TextColor3 = Color3.fromRGB(255, 255, 255)
+			row.Font = Enum.Font.Gotham
+			row.TextScaled = true
+			local suffix = player.Character and "" or "  (dead)"
+			row.Text = player.DisplayName .. suffix
+			row.Parent = scroller
 
-            local rowCorner = Instance.new("UICorner")
-            rowCorner.CornerRadius = UDim.new(0, 6)
-            rowCorner.Parent = row
+			local rowCorner = Instance.new("UICorner")
+			rowCorner.CornerRadius = UDim.new(0, 6)
+			rowCorner.Parent = row
 
-            row.MouseButton1Click:Connect(function()
-                DisguisePickerSelect:FireServer(player.UserId)
-                close()
-            end)
-        end
-    end
+			row.MouseButton1Click:Connect(function()
+				DisguisePickerSelect:FireServer(player.UserId)
+				close()
+			end)
+		end
+	end
 end
 
 local function open()
-    populate()
-    screenGui.Enabled = true
+	populate()
+	screenGui.Enabled = true
 end
 
 ------------------------------------------------------------------------------
@@ -130,16 +130,16 @@ end
 local ACTION = "OpenDisguisePicker"
 
 local function updateBinding()
-    ContextActionService:UnbindAction(ACTION)
-    if localPlayer:GetAttribute("Character") == "Rokurokubi" then
-        ContextActionService:BindActionAtPriority(ACTION, function(_, inputState)
-            if inputState == Enum.UserInputState.Begin then
-                if screenGui.Enabled then close() else open() end
-                return Enum.ContextActionResult.Sink
-            end
-        end, true, 2000, Enum.KeyCode.R)
-        ContextActionService:SetTitle(ACTION, "Disguise")
-    end
+	ContextActionService:UnbindAction(ACTION)
+	if localPlayer:GetAttribute("Character") == "Rokurokubi" then
+		ContextActionService:BindActionAtPriority(ACTION, function(_, inputState)
+			if inputState == Enum.UserInputState.Begin then
+				if screenGui.Enabled then close() else open() end
+				return Enum.ContextActionResult.Sink
+			end
+		end, true, 2000, Enum.KeyCode.R)
+		ContextActionService:SetTitle(ACTION, "Disguise")
+	end
 end
 
 localPlayer:GetAttributeChangedSignal("Character"):Connect(updateBinding)

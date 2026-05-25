@@ -86,15 +86,15 @@ roleLabel.Parent = roleFrame
 
 -- Friendly display names for the character keys.
 local CHARACTER_LABEL = {
-    Momotaro   = "Momotaro",
-    Rokurokubi = "Rokurokubi",
-    GirlA      = "Girl A",
+	Momotaro   = "Momotaro",
+	Rokurokubi = "Rokurokubi",
+	GirlA      = "Girl A",
 }
 
 -- Colors so the role badge feels different per team.
 local TEAM_COLOR = {
-    Warden = Color3.fromRGB(80, 140, 220),   -- blue
-    Yokai  = Color3.fromRGB(200, 60, 60),    -- red
+	Warden = Color3.fromRGB(80, 140, 220),   -- blue
+	Yokai  = Color3.fromRGB(200, 60, 60),    -- red
 }
 
 ------------------------------------------------------------------------------
@@ -102,55 +102,55 @@ local TEAM_COLOR = {
 ------------------------------------------------------------------------------
 
 local function formatSeconds(seconds)
-    seconds = math.max(0, math.floor(seconds))
-    local minutes = math.floor(seconds / 60)
-    local secs = seconds % 60
-    if minutes > 0 then
-        return string.format("%d:%02d", minutes, secs)
-    else
-        return string.format("0:%02d", secs)
-    end
+	seconds = math.max(0, math.floor(seconds))
+	local minutes = math.floor(seconds / 60)
+	local secs = seconds % 60
+	if minutes > 0 then
+		return string.format("%d:%02d", minutes, secs)
+	else
+		return string.format("0:%02d", secs)
+	end
 end
 
 local function updateTimer()
-    local state = Remotes:GetAttribute("RoundState")
-    local seconds = Remotes:GetAttribute("SecondsRemaining") or 0
-    local winners = Remotes:GetAttribute("Winners")
-    local hasEnough = Remotes:GetAttribute("HasEnoughPlayers")
-    local playersInLobby = Remotes:GetAttribute("PlayersInLobby") or 0
-    local playersNeeded = Remotes:GetAttribute("PlayersNeeded") or 2
+	local state = Remotes:GetAttribute("RoundState")
+	local seconds = Remotes:GetAttribute("SecondsRemaining") or 0
+	local winners = Remotes:GetAttribute("Winners")
+	local hasEnough = Remotes:GetAttribute("HasEnoughPlayers")
+	local playersInLobby = Remotes:GetAttribute("PlayersInLobby") or 0
+	local playersNeeded = Remotes:GetAttribute("PlayersNeeded") or 2
 
-    if state == "Ending" and winners then
-        timerLabel.Text = winners .. " win!"
-        timerFrame.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
-    elseif state == "InRound" then
-        timerLabel.Text = "Round: " .. formatSeconds(seconds)
-        timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-    elseif state == "Lobby" then
-        if hasEnough then
-            timerLabel.Text = "Starts in " .. formatSeconds(seconds)
-        else
-            timerLabel.Text = "Waiting (" .. playersInLobby .. "/" .. playersNeeded .. ")"
-        end
-        timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-    else
-        timerLabel.Text = "Connecting..."
-    end
+	if state == "Ending" and winners then
+		timerLabel.Text = winners .. " win!"
+		timerFrame.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
+	elseif state == "InRound" then
+		timerLabel.Text = "Round: " .. formatSeconds(seconds)
+		timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+	elseif state == "Lobby" then
+		if hasEnough then
+			timerLabel.Text = "Starts in " .. formatSeconds(seconds)
+		else
+			timerLabel.Text = "Waiting (" .. playersInLobby .. "/" .. playersNeeded .. ")"
+		end
+		timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+	else
+		timerLabel.Text = "Connecting..."
+	end
 end
 
 local function updateRole()
-    local characterKey = localPlayer:GetAttribute("Character")
-    local team = localPlayer:GetAttribute("Team")
+	local characterKey = localPlayer:GetAttribute("Character")
+	local team = localPlayer:GetAttribute("Team")
 
-    if not characterKey or not team then
-        roleLabel.Text = "Waiting in lobby"
-        roleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-        return
-    end
+	if not characterKey or not team then
+		roleLabel.Text = "Waiting in lobby"
+		roleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+		return
+	end
 
-    local displayName = CHARACTER_LABEL[characterKey] or characterKey
-    roleLabel.Text = "You are: " .. displayName .. "  (" .. team .. ")"
-    roleFrame.BackgroundColor3 = TEAM_COLOR[team] or Color3.fromRGB(20, 20, 30)
+	local displayName = CHARACTER_LABEL[characterKey] or characterKey
+	roleLabel.Text = "You are: " .. displayName .. "  (" .. team .. ")"
+	roleFrame.BackgroundColor3 = TEAM_COLOR[team] or Color3.fromRGB(20, 20, 30)
 end
 
 ------------------------------------------------------------------------------
