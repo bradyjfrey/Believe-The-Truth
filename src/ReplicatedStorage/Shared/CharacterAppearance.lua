@@ -216,6 +216,7 @@ function CharacterAppearance.apply(player, characterName)
 
         -- Only wipe if we started from the player's avatar (not from a bundle).
         if not fromBundle then
+            -- Wipe legacy clothing slots
             desc.Shirt          = 0
             desc.Pants          = 0
             desc.GraphicTShirt  = 0
@@ -227,6 +228,13 @@ function CharacterAppearance.apply(player, characterName)
             desc.FrontAccessory = ""
             desc.BackAccessory  = ""
             desc.WaistAccessory = ""
+            -- Wipe LAYERED CLOTHING accessories (the new system). Many modern
+            -- avatars use this for shirts/jackets/pants and the legacy fields
+            -- above don't touch them. SetAccessories({}, true) clears both
+            -- layered and rigid accessories at once.
+            pcall(function()
+                desc:SetAccessories({}, true)
+            end)
         end
 
         -- Catalog overrides (hair, face, shirt, pants). These run AFTER the

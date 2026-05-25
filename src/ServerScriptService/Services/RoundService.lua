@@ -117,6 +117,9 @@ function RoundService:_enterLobby()
     lobbyEndTime = tick() + Constants.Round.LobbyTimeSeconds
     publish("RoundState", Types.RoundState.Lobby)
     publish("SecondsRemaining", Constants.Round.LobbyTimeSeconds)
+    publish("PlayersInLobby", #Players:GetPlayers())
+    publish("PlayersNeeded", Constants.Round.MinPlayers)
+    publish("HasEnoughPlayers", #Players:GetPlayers() >= Constants.Round.MinPlayers)
 end
 
 function RoundService:_enterRound()
@@ -265,14 +268,18 @@ end
 
 function RoundService:Tick()
     if state == Types.RoundState.Lobby then
-        if #Players:GetPlayers() < Constants.Round.MinPlayers then
+        local currentPlayers = #Players:GetPlayers()
+        publish("PlayersInLobby", currentPlayers)
+        if currentPlayers < Constants.Round.MinPlayers then
             -- Reset the countdown until we have enough players again.
             lobbyEndTime = tick() + Constants.Round.LobbyTimeSeconds
             publish("SecondsRemaining", Constants.Round.LobbyTimeSeconds)
+            publish("HasEnoughPlayers", false)
         elseif tick() >= lobbyEndTime then
             self:_enterRound()
         else
             publish("SecondsRemaining", math.max(0, math.floor(lobbyEndTime - tick())))
+            publish("HasEnoughPlayers", true)
         end
     elseif state == Types.RoundState.InRound then
         publish("SecondsRemaining", math.max(0, math.floor(roundEndTime - tick())))

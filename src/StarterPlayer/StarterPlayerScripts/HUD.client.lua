@@ -116,18 +116,25 @@ local function updateTimer()
     local state = Remotes:GetAttribute("RoundState")
     local seconds = Remotes:GetAttribute("SecondsRemaining") or 0
     local winners = Remotes:GetAttribute("Winners")
+    local hasEnough = Remotes:GetAttribute("HasEnoughPlayers")
+    local playersInLobby = Remotes:GetAttribute("PlayersInLobby") or 0
+    local playersNeeded = Remotes:GetAttribute("PlayersNeeded") or 2
 
     if state == "Ending" and winners then
         timerLabel.Text = winners .. " win!"
         timerFrame.BackgroundColor3 = Color3.fromRGB(60, 100, 60)
     elseif state == "InRound" then
         timerLabel.Text = "Round: " .. formatSeconds(seconds)
-        timerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
     elseif state == "Lobby" then
-        timerLabel.Text = "Next round: " .. formatSeconds(seconds)
-        timerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+        if hasEnough then
+            timerLabel.Text = "Starts in " .. formatSeconds(seconds)
+        else
+            timerLabel.Text = "Waiting (" .. playersInLobby .. "/" .. playersNeeded .. ")"
+        end
+        timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
     else
-        timerLabel.Text = "Waiting..."
+        timerLabel.Text = "Connecting..."
     end
 end
 
@@ -153,6 +160,9 @@ end
 Remotes:GetAttributeChangedSignal("RoundState"):Connect(updateTimer)
 Remotes:GetAttributeChangedSignal("SecondsRemaining"):Connect(updateTimer)
 Remotes:GetAttributeChangedSignal("Winners"):Connect(updateTimer)
+Remotes:GetAttributeChangedSignal("HasEnoughPlayers"):Connect(updateTimer)
+Remotes:GetAttributeChangedSignal("PlayersInLobby"):Connect(updateTimer)
+Remotes:GetAttributeChangedSignal("PlayersNeeded"):Connect(updateTimer)
 
 localPlayer:GetAttributeChangedSignal("Character"):Connect(updateRole)
 localPlayer:GetAttributeChangedSignal("Team"):Connect(updateRole)
