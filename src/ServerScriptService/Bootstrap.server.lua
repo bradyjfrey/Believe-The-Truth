@@ -16,6 +16,11 @@ local ServerScriptService = game:GetService("ServerScriptService")
 -- round. RoundService calls player:LoadCharacter() when it's time to respawn.
 Players.CharacterAutoLoads = false
 
+-- Seed math.random with the current time so Yokai picks don't pattern-repeat
+-- across test sessions. Otherwise Roblox's default seed gives the same
+-- sequence every run.
+math.randomseed(os.time())
+
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
 local CharacterAppearance = require(ReplicatedStorage.Shared.CharacterAppearance)

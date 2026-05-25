@@ -257,13 +257,25 @@ function CharacterAppearance.apply(player, characterName)
 
     -- 2. Per-part color overrides — applied AFTER the description so they
     --    don't get overwritten.
-    if data.PartOverrides then
+    -- Roblox's character system sometimes re-applies body colors AFTER
+    -- ApplyDescription finishes (over multiple frames). We apply the override
+    -- now AND again on a delay to win that race.
+    local function applyPartOverrides()
         for partName, color in pairs(data.PartOverrides) do
             local part = character:FindFirstChild(partName)
             if part and part:IsA("BasePart") then
                 part.Color = color
             end
         end
+    end
+    if data.PartOverrides then
+        applyPartOverrides()
+        task.delay(0.5, function()
+            if character.Parent then applyPartOverrides() end
+        end)
+        task.delay(1.5, function()
+            if character.Parent then applyPartOverrides() end
+        end)
     end
 
     -- 2b. Per-part material overrides (e.g. Neon for Girl A's glowing skin).
@@ -356,22 +368,12 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         weldTo(knot, lowerTorso, CFrame.new(0, 0.5, -0.7))
 
     elseif spec.Type == "Satchel" then
-        local upperTorso = character:FindFirstChild("UpperTorso")
+        -- Pouch only (no strap — the diagonal Part read as a "cross" against
+        -- the torso). When art uploads a proper satchel texture or model,
+        -- swap this block out.
         local lowerTorso = character:FindFirstChild("LowerTorso")
-        if not upperTorso or not lowerTorso then return end
+        if not lowerTorso then return end
 
-        -- Strap: thin diagonal Part across the chest (right shoulder → left hip)
-        local strap = Instance.new("Part")
-        strap.Name = "SatchelStrap"
-        strap.Size = Vector3.new(0.18, 4, 0.18)
-        strap.Color = spec.Color
-        strap.Material = Enum.Material.Fabric
-        strap.CanCollide = false
-        strap.Massless = true
-        strap.Parent = parent
-        weldTo(strap, upperTorso, CFrame.new(0, 0, -0.55) * CFrame.Angles(0, 0, math.rad(30)))
-
-        -- Pouch on the left hip
         local pouch = Instance.new("Part")
         pouch.Name = "SatchelPouch"
         pouch.Size = Vector3.new(1.2, 1, 0.55)
@@ -490,34 +492,38 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         emitter.Parent = upperTorso
 
     elseif spec.Type == "SwordInHand" then
-        -- Katana held in the LEFT hand (per ref drawing), blade pointing down.
-        -- The hand's local +Y axis points along the fingers (downward in
-        -- world space when arms are at rest), so we use POSITIVE Y offsets.
+        -- Katana held in the LEFT hand, blade pointing FORWARD (away from
+        -- the body) like he's about to swing — not hanging at his side.
+        -- The blade's long axis is Z so the natural forward direction from
+        -- the hand wraps the geometry correctly.
         local leftHand = character:FindFirstChild("LeftHand")
         if not leftHand then return end
 
         local blade = Instance.new("Part")
         blade.Name = "KatanaBlade"
-        blade.Size = Vector3.new(0.12, 4, 0.4)
+        blade.Size = Vector3.new(0.12, 0.4, 4)
         blade.Color = spec.BladeColor
         blade.Material = Enum.Material.Metal
         blade.CanCollide = false
         blade.Massless = true
         blade.Parent = parent
-        weldTo(blade, leftHand, CFrame.new(0, 2.3, 0))
+        -- -Z in hand-local space is "forward" (away from the wrist) when the
+        -- arm is at rest. Push the blade 2.3 studs out from the hand.
+        weldTo(blade, leftHand, CFrame.new(0, 0, -2.3))
 
         local hilt = Instance.new("Part")
         hilt.Name = "KatanaHilt"
-        hilt.Size = Vector3.new(0.2, 0.9, 0.4)
+        hilt.Size = Vector3.new(0.2, 0.4, 0.9)
         hilt.Color = spec.HiltColor
         hilt.Material = Enum.Material.Fabric
         hilt.CanCollide = false
         hilt.Massless = true
         hilt.Parent = parent
-        weldTo(hilt, leftHand, CFrame.new(0, 0.3, 0))
+        weldTo(hilt, leftHand, CFrame.new(0, 0, -0.3))
 
-        -- Tsuba (circular guard at base of blade). Cylinder shape — its long
-        -- axis is X, so we rotate it 90° around Z to make it a flat disc.
+        -- Tsuba (circular guard between the hilt and the blade). Cylinder's
+        -- long axis is X — we want it as a flat disc perpendicular to the
+        -- blade's Z direction, so rotate 90° around Y.
         local tsuba = Instance.new("Part")
         tsuba.Name = "KatanaTsuba"
         tsuba.Shape = Enum.PartType.Cylinder
@@ -527,7 +533,7 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         tsuba.CanCollide = false
         tsuba.Massless = true
         tsuba.Parent = parent
-        weldTo(tsuba, leftHand, CFrame.new(0, 0.55, 0) * CFrame.Angles(0, 0, math.rad(90)))
+        weldTo(tsuba, leftHand, CFrame.new(0, 0, -0.55) * CFrame.Angles(0, math.rad(90), 0))
     end
 end
 

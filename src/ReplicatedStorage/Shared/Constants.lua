@@ -65,7 +65,7 @@ Constants.Momotaro = {
         SlowMultiplier = 0.5,        -- Yokai moves at 50% of their speed while near Inuta
         InutaHealth = 40,
         InutaLifetimeSeconds = 60,
-        InutaAssetId = 14028846653,  -- Creator Store model for Inuta the dog
+        InutaAssetId = 5192647128,   -- Creator Store 3D Asset / Character for Inuta the dog
     },
 
     MessyEater = {

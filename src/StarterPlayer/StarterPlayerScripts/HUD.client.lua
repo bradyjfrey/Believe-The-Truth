@@ -29,9 +29,20 @@ screenGui.IgnoreGuiInset = false
 screenGui.DisplayOrder = 5
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
+-- Shared helper to add interior padding (left/right gets the most so text
+-- has breathing room from the rounded corners).
+local function addPadding(frame)
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft   = UDim.new(0, 20)
+    padding.PaddingRight  = UDim.new(0, 20)
+    padding.PaddingTop    = UDim.new(0, 8)
+    padding.PaddingBottom = UDim.new(0, 8)
+    padding.Parent = frame
+end
+
 -- Bottom-center timer
 local timerFrame = Instance.new("Frame")
-timerFrame.Size = UDim2.fromOffset(300, 64)
+timerFrame.Size = UDim2.fromOffset(320, 64)
 timerFrame.Position = UDim2.new(0.5, 0, 1, -24)
 timerFrame.AnchorPoint = Vector2.new(0.5, 1)
 timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
@@ -43,10 +54,7 @@ local timerCorner = Instance.new("UICorner")
 timerCorner.CornerRadius = UDim.new(0, 10)
 timerCorner.Parent = timerFrame
 
-local timerStroke = Instance.new("UIStroke")
-timerStroke.Color = Color3.fromRGB(255, 255, 255)
-timerStroke.Thickness = 2
-timerStroke.Parent = timerFrame
+addPadding(timerFrame)
 
 local timerLabel = Instance.new("TextLabel")
 timerLabel.Size = UDim2.fromScale(1, 1)
@@ -59,21 +67,18 @@ timerLabel.Parent = timerFrame
 
 -- Top-left role badge
 local roleFrame = Instance.new("Frame")
-roleFrame.Size = UDim2.fromOffset(320, 56)
+roleFrame.Size = UDim2.fromOffset(340, 56)
 roleFrame.Position = UDim2.new(0, 16, 0, 16)
 roleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
 roleFrame.BackgroundTransparency = 0.1
 roleFrame.BorderSizePixel = 0
 roleFrame.Parent = screenGui
 
-local roleStroke = Instance.new("UIStroke")
-roleStroke.Color = Color3.fromRGB(255, 255, 255)
-roleStroke.Thickness = 2
-roleStroke.Parent = roleFrame
-
 local roleCorner = Instance.new("UICorner")
-roleCorner.CornerRadius = UDim.new(0, 8)
+roleCorner.CornerRadius = UDim.new(0, 10)
 roleCorner.Parent = roleFrame
+
+addPadding(roleFrame)
 
 local roleLabel = Instance.new("TextLabel")
 roleLabel.Size = UDim2.fromScale(1, 1)

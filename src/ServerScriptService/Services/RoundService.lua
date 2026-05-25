@@ -97,7 +97,8 @@ function RoundService:_enterLobby()
 
     if disguiseService then disguiseService:DropAll() end
 
-    -- Clear per-player state and respawn everyone in the lobby.
+    -- Clear per-player state FIRST in a single pass so the Character attribute
+    -- definitely reads nil before any CharacterAdded handler can run.
     for _, player in ipairs(Players:GetPlayers()) do
         if abilityService then abilityService:Clear(player) end
         player:SetAttribute("Team", nil)
@@ -107,6 +108,14 @@ function RoundService:_enterLobby()
         player:SetAttribute("Incognito", nil)
         player:SetAttribute("Disguised", nil)
         player:SetAttribute("BreachPopupActive", nil)
+    end
+
+    -- Wait a frame so the attribute clears propagate, then respawn everyone.
+    -- Without this, CharacterAdded can fire BEFORE the nil attribute is seen,
+    -- and the character keeps its round styling in the lobby.
+    task.wait()
+
+    for _, player in ipairs(Players:GetPlayers()) do
         player:LoadCharacter()
     end
 
@@ -278,7 +287,11 @@ function RoundService:Tick()
         elseif tick() >= lobbyEndTime then
             self:_enterRound()
         else
-            publish("SecondsRemaining", math.max(0, math.floor(lobbyEndTime - tick())))
+            -- Clamp to LobbyTimeSeconds so a stale lobbyEndTime can never
+            -- display a wildly-large number like "Starts in 2:20".
+            local remaining = math.max(0, math.floor(lobbyEndTime - tick()))
+            remaining = math.min(remaining, Constants.Round.LobbyTimeSeconds)
+            publish("SecondsRemaining", remaining)
             publish("HasEnoughPlayers", true)
         end
     elseif state == Types.RoundState.InRound then
