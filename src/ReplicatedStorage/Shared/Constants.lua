@@ -15,7 +15,7 @@ local Constants = {}
 Constants.Round = {
     MinPlayers = 2,                  -- need this many players for a round to start
     LobbyTimeSeconds = 20,           -- countdown before a round auto-starts
-    RoundLengthSeconds = 5 * 60,     -- if Wardens survive this long, they win
+    RoundLengthSeconds = 3 * 60,     -- if Wardens survive this long, they win
     EndOfRoundDelaySeconds = 5,      -- pause after a round before going back to lobby
 }
 

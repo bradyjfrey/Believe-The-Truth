@@ -36,7 +36,7 @@ When a player dies mid-round, they spectate until the round ends. They don't res
 | --- | --- |
 | Minimum players to start | 2 |
 | Lobby countdown | 20 seconds |
-| Round length | 5 minutes |
+| Round length | 3 minutes |
 | End-of-round pause | 5 seconds |
 
 ---
@@ -74,6 +74,25 @@ Roblox's default walk speed is 16. We're a little faster so the game feels snapp
 **Cost:** 900 Coins (free for everyone in this build)
 
 Born from an oversized peach and blessed by the gods, the legendary Momotaro is prepared for any foe. Tagging along to help him are Inuta the dog, Sarumi the monkey, and Kijiro the pheasant.
+
+### Appearance
+
+A boy in normal Roblox proportions. Color palette uses two peach-themed Pantones:
+
+| Element | Color | Notes |
+| --- | --- | --- |
+| Skin tone | `#f8b892` | Pantone "Peach Fuzz" 13-1023 TCX |
+| Happi coat (torso) | `#ef9080` | Pantone "Peach Pink" 16-1626 TPX — solid color placeholder until shirt texture art exists |
+| Hakama pants (legs) | `#506ec0` | Blue, tucked into the socks |
+| Gloves (hands) | `#330541` | Fingerless, dark purple |
+| Socks (feet) | `#330541` | Same purple as gloves, open-toed |
+| Obi sash | `#3d6b3a` | Green, with a knot tied in front |
+| Satchel | `#8B6F47` | Brown — strap goes diagonally over right shoulder, pouch on left hip |
+| Katana blade | `#c0c0c0` | Held in right hand, blade pointing down |
+| Katana hilt wrap | `#2a1f15` | Dark wrap |
+| Katana tsuba (guard) | `#f8b892` | Peach to match the palette |
+| Hair | `#633d4a` | Cropped, shaggy — Creator Store asset ID `12401269941` |
+| Eyes | `#608666` | Muted green — TODO: needs a custom face decal upload |
 
 ### Passive — Bird's Eye View
 
@@ -116,6 +135,22 @@ Momotaro eats a stick of kibi dango to heal 30 HP himself. If a Warden teammate 
 **Cost:** Free (starter Yokai)
 
 A long-necked demon born from waste, eating out of hunger; later evolved to feast on humans. Description from the team: *on trails to murder, to starvation, till death do us part, I wish you luck..*
+
+### Appearance
+
+Tall, geisha-styled woman with a dramatically stretched neck. Her base form makes it obvious what she is — Disguise is how she hides.
+
+| Element | Color | Notes |
+| --- | --- | --- |
+| Skin tone | `#f5e3d4` | Pale, geisha-white |
+| Stretched neck | same as skin | ~4-stud column connecting torso to floating head — distinctive silhouette |
+| Kimono top + skirt | `#b22222` | Solid red placeholder for now; real cherry-blossom pattern needs a shirt-template upload |
+| Obi sash | `#4a0e0e` | Darker red, knot in front |
+| Feet / sandals | `#1a0a0a` | Near-black |
+| Folding fan | `#b22222` | Red, held in left hand |
+| Hair | black, long, hair ornament with red beads | TODO: catalog hair accessory ID |
+| Face | white painted, red eyes, dark lips/teeth | TODO: custom face decal |
+| Arm tattoos (dragons, waves) | dark | TODO: decal uploads |
 
 ### Passive — Hidden Hunger
 
@@ -181,6 +216,23 @@ She grabs the nearest Warden by the throat for 2 seconds. Deals 1 HP per second 
 **Cost:** 1,255 coins (paid)
 
 The corpse of an elementary school girl reprogrammed by an AI parasite. Her body warped and distorted, she has one goal: to satiate her constant hunger for bloodshed.
+
+### Appearance
+
+Glitchy, glowing schoolgirl monstrosity in a dirty Japanese elementary-school uniform.
+
+| Element | Color | Notes |
+| --- | --- | --- |
+| Skin (head, arms, legs) | `#c81818` Neon | Deep red, glowing — binary pattern tiled from asset `37444347` |
+| Sailor uniform top (UpperTorso) | `#f5f5f5` | White, solid placeholder — real sailor collar/stains need a shirt upload |
+| Skirt (LowerTorso) | `#1f4d3f` | Dark teal-green |
+| Shoes | `#1a1a1a` | Black mary-janes |
+| Cleaver blade | `#c0c0c0` | Silver, held in right hand |
+| Cleaver handle | `#1a1a1a` | Black |
+| Pop-up particles | `#c81818` | Drifting red particles around her body (placeholder sparkle texture until real pop-up icon uploads) |
+| Hair | dark brown, messy, medium | TODO: catalog accessory ID |
+| Face | red glitch, no clear features | TODO: custom face decal |
+| Knee socks (white, dirty) | — | TODO: needs shirt/pants template with socks baked in |
 
 ### Passive — Auto Connect
 
@@ -290,6 +342,7 @@ src/
         ├── AbilityInput.client.lua     (keybinds + mobile buttons)
         ├── DisguisePickerUI.client.lua (Rokurokubi target picker)
         ├── BreachPopup.client.lua      (Breach of Privacy popup on the target)
+        ├── HUD.client.lua              (round timer + role badge)
         ├── Sprint.client.lua           (hold-Shift run)
         └── Incognito.client.lua        (renders Girl A invisible locally)
 ```

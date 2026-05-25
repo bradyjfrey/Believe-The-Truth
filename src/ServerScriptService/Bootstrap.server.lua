@@ -18,6 +18,7 @@ Players.CharacterAutoLoads = false
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
+local CharacterAppearance = require(ReplicatedStorage.Shared.CharacterAppearance)
 
 local RoundService = require(ServerScriptService.Services.RoundService)
 local AbilityService = require(ServerScriptService.Services.AbilityService)
@@ -107,6 +108,10 @@ local function applyCharacterStats(player, character)
     local humanoid = character:WaitForChild("Humanoid")
     local characterName = player:GetAttribute("Character")
     if not characterName then return end
+
+    -- Apply appearance FIRST. ApplyDescription resets Health to 100, so we
+    -- set MaxHealth/Health after this call.
+    CharacterAppearance.apply(player, characterName)
 
     if characterName == Types.Character.Momotaro then
         humanoid.MaxHealth = Constants.Momotaro.MaxHealth

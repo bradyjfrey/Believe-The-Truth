@@ -17,6 +17,15 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 local RoundService = {}
 
+-- Publishes the current round state to the client HUD by setting attributes
+-- on ReplicatedStorage/Remotes. The HUD just reads these attributes.
+local function publish(key, value)
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    if remotes then
+        remotes:SetAttribute(key, value)
+    end
+end
+
 local state = Types.RoundState.Lobby
 local roundEndTime = 0
 local lobbyEndTime = 0
@@ -106,6 +115,8 @@ function RoundService:_enterLobby()
     if hotspotFolder then hotspotFolder:Destroy() end
 
     lobbyEndTime = tick() + Constants.Round.LobbyTimeSeconds
+    publish("RoundState", Types.RoundState.Lobby)
+    publish("SecondsRemaining", Constants.Round.LobbyTimeSeconds)
 end
 
 function RoundService:_enterRound()
@@ -158,6 +169,8 @@ function RoundService:_enterRound()
     self:_spawnPlaceholderHotspots()
 
     roundEndTime = tick() + Constants.Round.RoundLengthSeconds
+    publish("RoundState", Types.RoundState.InRound)
+    publish("SecondsRemaining", Constants.Round.RoundLengthSeconds)
 end
 
 function RoundService:_spawnPlaceholderHotspots()
@@ -190,13 +203,17 @@ function RoundService:_spawnPlaceholderHotspots()
         -- (works only while she's in Incognito Mode — checked server-side
         -- in GirlA.HotspotTeleport). MaxActivationDistance is high because
         -- she can click from anywhere on the map.
+        --
+        -- We pre-filter here: only forward to AbilityService if the clicker
+        -- is actually Girl A. Otherwise every Warden click would spam an
+        -- "Momotaro has no ability HotspotTeleport" warning.
         local clickDetector = Instance.new("ClickDetector")
         clickDetector.MaxActivationDistance = 1000
         clickDetector.Parent = hotspot
         clickDetector.MouseClick:Connect(function(player)
-            if abilityService then
-                abilityService:Handle(player, "HotspotTeleport", {Hotspot = hotspot})
-            end
+            if not abilityService then return end
+            if player:GetAttribute("Character") ~= Types.Character.GirlA then return end
+            abilityService:Handle(player, "HotspotTeleport", {Hotspot = hotspot})
         end)
     end
 end
@@ -233,7 +250,11 @@ end
 function RoundService:_enterEnding(winners)
     state = Types.RoundState.Ending
     print(string.format("[Round] %s win!", winners))
+    publish("RoundState", Types.RoundState.Ending)
+    publish("Winners", winners)
+    publish("SecondsRemaining", Constants.Round.EndOfRoundDelaySeconds)
     task.delay(Constants.Round.EndOfRoundDelaySeconds, function()
+        publish("Winners", nil)
         self:_enterLobby()
     end)
 end
@@ -247,10 +268,14 @@ function RoundService:Tick()
         if #Players:GetPlayers() < Constants.Round.MinPlayers then
             -- Reset the countdown until we have enough players again.
             lobbyEndTime = tick() + Constants.Round.LobbyTimeSeconds
+            publish("SecondsRemaining", Constants.Round.LobbyTimeSeconds)
         elseif tick() >= lobbyEndTime then
             self:_enterRound()
+        else
+            publish("SecondsRemaining", math.max(0, math.floor(lobbyEndTime - tick())))
         end
     elseif state == Types.RoundState.InRound then
+        publish("SecondsRemaining", math.max(0, math.floor(roundEndTime - tick())))
         local winner = self:_checkWinConditions()
         if winner then
             self:_enterEnding(winner)
