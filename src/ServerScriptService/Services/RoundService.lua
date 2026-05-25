@@ -17,6 +17,11 @@ local Types = require(ReplicatedStorage.Shared.Types)
 
 local RoundService = {}
 
+-- Roblox's modern RNG. Each instance is auto-seeded with high precision,
+-- so we don't get repeated sequences across test sessions like math.random
+-- sometimes does.
+local rng = Random.new()
+
 -- Publishes the current round state to the client HUD by setting attributes
 -- on ReplicatedStorage/Remotes. The HUD just reads these attributes.
 local function publish(key, value)
@@ -141,11 +146,10 @@ function RoundService:_enterRound()
         return
     end
 
-    -- Pick one random Yokai.
-    local yokaiPlayer = players[math.random(1, #players)]
+    -- Pick one random Yokai player.
+    local yokaiPlayer = players[rng:NextInteger(1, #players)]
 
-    -- Pick which Yokai character. If they own Girl A AND Rokurokubi, random
-    -- for now. TODO: pre-round picker UI lets them choose.
+    -- Build the list of Yokai characters this player owns.
     local yokaiOptions = {}
     if ownsCharacter(yokaiPlayer, Types.Character.Rokurokubi) then
         table.insert(yokaiOptions, Types.Character.Rokurokubi)
@@ -157,7 +161,17 @@ function RoundService:_enterRound()
         warn("[RoundService] picked yokai player owns no Yokai characters — falling back to Rokurokubi")
         table.insert(yokaiOptions, Types.Character.Rokurokubi)
     end
-    local yokaiCharacter = yokaiOptions[math.random(1, #yokaiOptions)]
+
+    local yokaiCharacter
+    if #yokaiOptions == 1 then
+        yokaiCharacter = yokaiOptions[1]
+    else
+        -- Ask the picked player to choose. If they don't pick in time, default
+        -- to a random one so the round still starts.
+        yokaiCharacter = self:_askPlayerToPick(yokaiPlayer, yokaiOptions)
+    end
+    print(string.format("[RoundService] Yokai options: [%s], chosen -> %s",
+        table.concat(yokaiOptions, ", "), yokaiCharacter))
 
     -- Assign teams + characters and respawn so the character gets fresh HP.
     for _, player in ipairs(players) do
@@ -183,6 +197,49 @@ function RoundService:_enterRound()
     roundEndTime = tick() + Constants.Round.RoundLengthSeconds
     publish("RoundState", Types.RoundState.InRound)
     publish("SecondsRemaining", Constants.Round.RoundLengthSeconds)
+end
+
+-- Asks the player to pick from `options`. Shows them a UI via the
+-- CharacterPicker remote, waits up to PickTimeoutSeconds for them to choose,
+-- and falls back to random if they don't.
+function RoundService:_askPlayerToPick(player, options)
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    local picker = remotes and remotes:FindFirstChild("CharacterPicker")
+    if not picker then
+        return options[rng:NextInteger(1, #options)]
+    end
+
+    -- Tell the client to open the picker with these options.
+    picker:FireClient(player, options)
+
+    -- Listen for their pick.
+    local chosen = nil
+    local conn
+    conn = picker.OnServerEvent:Connect(function(firingPlayer, choice)
+        if firingPlayer ~= player then return end
+        for _, valid in ipairs(options) do
+            if choice == valid then
+                chosen = choice
+                break
+            end
+        end
+    end)
+
+    local pickTimeoutSeconds = 10
+    local startTime = tick()
+    while not chosen and (tick() - startTime) < pickTimeoutSeconds do
+        task.wait(0.1)
+    end
+    conn:Disconnect()
+
+    if not chosen then
+        chosen = options[rng:NextInteger(1, #options)]
+        print(string.format("[RoundService] %s didn't pick in time — using %s", player.Name, chosen))
+    end
+
+    -- Tell the client the picker can close.
+    picker:FireClient(player, nil)
+    return chosen
 end
 
 function RoundService:_spawnPlaceholderHotspots()

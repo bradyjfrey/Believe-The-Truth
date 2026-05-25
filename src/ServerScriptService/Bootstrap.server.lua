@@ -63,6 +63,7 @@ local AbilityRequest        = ensureRemote("AbilityRequest", "RemoteEvent")
 local NeckWrapMash          = ensureRemote("NeckWrapMash", "RemoteEvent")
 local BreachClose           = ensureRemote("BreachClose", "RemoteEvent")
 local DisguisePickerSelect  = ensureRemote("DisguisePickerSelect", "RemoteEvent")
+local CharacterPicker       = ensureRemote("CharacterPicker", "RemoteEvent")
 
 ------------------------------------------------------------------------------
 -- Wire services together
