@@ -68,27 +68,56 @@ local function findYokaiInFront(attackerRoot, forwardStuds, sideStuds)
     return hits
 end
 
--- Spawns a companion (Inuta or Saru). First looks for an art-team Model in
--- ReplicatedStorage/Companions/<name>. If none is there, makes a colored
--- placeholder Part so the ability is testable even without art.
-local function spawnCompanion(name, fallbackColor, fallbackSize, position, parent)
+-- Spawns a companion (Inuta, Saru, Kijiro). Tries in order:
+--   1. A Model the art team dropped into ReplicatedStorage/Companions/<name>
+--   2. The Creator Store asset at `assetId` via InsertService:LoadAsset
+--   3. A colored placeholder Part so the ability is testable even without art
+local InsertService = game:GetService("InsertService")
+
+local function placeAtPosition(thing, position)
+    if thing:IsA("Model") then
+        if not thing.PrimaryPart then
+            thing.PrimaryPart = thing:FindFirstChildWhichIsA("BasePart")
+        end
+        if thing.PrimaryPart then
+            thing:PivotTo(CFrame.new(position))
+        end
+    elseif thing:IsA("BasePart") then
+        thing.Position = position
+    end
+end
+
+local function spawnCompanion(name, assetId, fallbackColor, fallbackSize, position, parent)
+    -- 1. Local override from the art team
     local companionsFolder = ReplicatedStorage:FindFirstChild("Companions")
     local template = companionsFolder and companionsFolder:FindFirstChild(name)
     if template then
         local clone = template:Clone()
         clone.Parent = parent
-        if clone:IsA("Model") then
-            if clone.PrimaryPart then
-                clone:PivotTo(CFrame.new(position))
-            end
-        elseif clone:IsA("BasePart") then
-            clone.Position = position
-        end
+        placeAtPosition(clone, position)
         return clone
     end
 
-    -- TODO: art team — drop a Model named "Inuta" or "Saru" into
-    -- ReplicatedStorage.Companions and this fallback won't be used.
+    -- 2. Pull the model from Roblox's Creator Store at runtime
+    if assetId and assetId > 0 then
+        local ok, container = pcall(function()
+            return InsertService:LoadAsset(assetId)
+        end)
+        if ok and container then
+            local asset = container:FindFirstChildWhichIsA("Model")
+                       or container:FindFirstChildWhichIsA("BasePart")
+            if asset then
+                asset.Name = name
+                asset.Parent = parent
+                placeAtPosition(asset, position)
+                container:Destroy()
+                return asset
+            end
+            container:Destroy()
+        end
+    end
+
+    -- 3. Fallback placeholder
     local part = Instance.new("Part")
     part.Name = name
     part.Size = fallbackSize
@@ -99,6 +128,16 @@ local function spawnCompanion(name, fallbackColor, fallbackSize, position, paren
     part.Position = position
     part.Parent = parent
     return part
+end
+
+-- Returns the BasePart we should treat as the "anchor" for a companion (so we
+-- can read its position or anchor it).
+local function companionAnchor(companion)
+    if companion:IsA("BasePart") then return companion end
+    if companion:IsA("Model") then
+        return companion.PrimaryPart or companion:FindFirstChildWhichIsA("BasePart")
+    end
+    return nil
 end
 
 ------------------------------------------------------------------------------
@@ -186,7 +225,8 @@ Momotaro.Abilities.GuardDog = function(player, params)
     local spawnPos = rootPart.Position - Vector3.new(0, 2, 0)
     local inuta = spawnCompanion(
         "Inuta",
-        Color3.fromRGB(120, 80, 40),     -- brown placeholder
+        M.GuardDog.InutaAssetId,
+        Color3.fromRGB(120, 80, 40),     -- brown placeholder fallback
         Vector3.new(3, 2, 4),
         spawnPos,
         workspace
@@ -291,7 +331,8 @@ Momotaro.Abilities.MessyEater = function(player, params)
     local saruPos = rootPart.Position - Vector3.new(0, 2, 0)
     local saru = spawnCompanion(
         "Saru",
-        Color3.fromRGB(240, 220, 80),    -- yellow placeholder
+        nil,                              -- no asset ID yet — Brady will provide later
+        Color3.fromRGB(240, 220, 80),     -- yellow placeholder fallback
         Vector3.new(2, 2, 2),
         saruPos,
         workspace
@@ -394,9 +435,49 @@ end
 
 ------------------------------------------------------------------------------
 -- PASSIVE — BIRD'S EYE VIEW
--- Every 45 seconds, Kijiro highlights all Yokai for 6.5 seconds.
+-- Kijiro the pheasant follows Momotaro at all times. Every 45 seconds he
+-- highlights all Yokai for 6.5 seconds.
 ------------------------------------------------------------------------------
 function Momotaro:StartPassives(player)
+    local rootPart = getRootPart(player)
+    local character = player.Character
+    if not rootPart or not character then return end
+
+    -- 1. Spawn Kijiro near Momotaro and have him track Momotaro's position
+    --    every Heartbeat (parented to the character so he dies with him).
+    local kijiroSpawnPos = rootPart.Position + M.BirdsEyeView.FollowOffset
+    local kijiro = spawnCompanion(
+        "Kijiro",
+        M.BirdsEyeView.KijiroAssetId,
+        Color3.fromRGB(180, 60, 60),
+        Vector3.new(1, 0.7, 1.5),
+        kijiroSpawnPos,
+        character
+    )
+
+    local kijiroAnchor = companionAnchor(kijiro)
+    if kijiroAnchor then
+        kijiroAnchor.Anchored = true
+        kijiroAnchor.CanCollide = false
+    end
+
+    task.spawn(function()
+        while kijiro.Parent and player:GetAttribute("Character") == Types.Character.Momotaro do
+            local currentRoot = getRootPart(player)
+            if currentRoot and kijiroAnchor then
+                local target = currentRoot.CFrame * CFrame.new(M.BirdsEyeView.FollowOffset)
+                if kijiro:IsA("Model") then
+                    kijiro:PivotTo(target)
+                else
+                    kijiroAnchor.CFrame = target
+                end
+            end
+            RunService.Heartbeat:Wait()
+        end
+        if kijiro and kijiro.Parent then kijiro:Destroy() end
+    end)
+
+    -- 2. The actual Bird's Eye View: highlight Yokai every IntervalSeconds.
     task.spawn(function()
         while player:GetAttribute("Character") == Types.Character.Momotaro do
             task.wait(M.BirdsEyeView.IntervalSeconds)

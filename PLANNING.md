@@ -144,7 +144,7 @@ Tall, geisha-styled woman with a dramatically stretched neck. Her base form make
 | --- | --- | --- |
 | Skin tone | `#f5e3d4` | Pale, geisha-white |
 | Stretched neck | same as skin | ~4-stud column connecting torso to floating head — distinctive silhouette |
-| Kimono top + skirt | `#b22222` | Solid red placeholder for now; real cherry-blossom pattern needs a shirt-template upload |
+| Full outfit | Creator Store Bundle `13358640198` | Whole avatar package (body + clothing + accessories) loaded as a single character bundle |
 | Obi sash | `#4a0e0e` | Darker red, knot in front |
 | Feet / sandals | `#1a0a0a` | Near-black |
 | Folding fan | `#b22222` | Red, held in left hand |

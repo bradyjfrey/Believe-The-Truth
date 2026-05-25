@@ -23,22 +23,30 @@ local Remotes = ReplicatedStorage:WaitForChild("Remotes")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "HUD"
 screenGui.ResetOnSpawn = false
-screenGui.IgnoreGuiInset = true
+-- IgnoreGuiInset MUST be false here so our elements sit BELOW Roblox's top
+-- bar / leaderboard instead of getting hidden behind it.
+screenGui.IgnoreGuiInset = false
+screenGui.DisplayOrder = 5
 screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 
 -- Top-center timer
 local timerFrame = Instance.new("Frame")
-timerFrame.Size = UDim2.fromOffset(280, 56)
-timerFrame.Position = UDim2.new(0.5, 0, 0, 12)
+timerFrame.Size = UDim2.fromOffset(300, 64)
+timerFrame.Position = UDim2.new(0.5, 0, 0, 16)
 timerFrame.AnchorPoint = Vector2.new(0.5, 0)
-timerFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-timerFrame.BackgroundTransparency = 0.2
+timerFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+timerFrame.BackgroundTransparency = 0.1
 timerFrame.BorderSizePixel = 0
 timerFrame.Parent = screenGui
 
 local timerCorner = Instance.new("UICorner")
-timerCorner.CornerRadius = UDim.new(0, 8)
+timerCorner.CornerRadius = UDim.new(0, 10)
 timerCorner.Parent = timerFrame
+
+local timerStroke = Instance.new("UIStroke")
+timerStroke.Color = Color3.fromRGB(255, 255, 255)
+timerStroke.Thickness = 2
+timerStroke.Parent = timerFrame
 
 local timerLabel = Instance.new("TextLabel")
 timerLabel.Size = UDim2.fromScale(1, 1)
@@ -51,12 +59,17 @@ timerLabel.Parent = timerFrame
 
 -- Top-left role badge
 local roleFrame = Instance.new("Frame")
-roleFrame.Size = UDim2.fromOffset(280, 48)
-roleFrame.Position = UDim2.new(0, 12, 0, 12)
-roleFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-roleFrame.BackgroundTransparency = 0.2
+roleFrame.Size = UDim2.fromOffset(320, 56)
+roleFrame.Position = UDim2.new(0, 16, 0, 16)
+roleFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+roleFrame.BackgroundTransparency = 0.1
 roleFrame.BorderSizePixel = 0
 roleFrame.Parent = screenGui
+
+local roleStroke = Instance.new("UIStroke")
+roleStroke.Color = Color3.fromRGB(255, 255, 255)
+roleStroke.Thickness = 2
+roleStroke.Parent = roleFrame
 
 local roleCorner = Instance.new("UICorner")
 roleCorner.CornerRadius = UDim.new(0, 8)

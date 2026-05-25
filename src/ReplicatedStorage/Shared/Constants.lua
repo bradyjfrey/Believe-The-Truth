@@ -65,6 +65,7 @@ Constants.Momotaro = {
         SlowMultiplier = 0.5,        -- Yokai moves at 50% of their speed while near Inuta
         InutaHealth = 40,
         InutaLifetimeSeconds = 60,
+        InutaAssetId = 14028846653,  -- Creator Store model for Inuta the dog
     },
 
     MessyEater = {
@@ -88,6 +89,8 @@ Constants.Momotaro = {
         -- Passive: Kijiro the pheasant pings Yokai locations every so often.
         HighlightSeconds = 6.5,
         IntervalSeconds = 45,
+        KijiroAssetId = 16765961201,  -- Creator Store model for Kijiro the bird
+        FollowOffset = Vector3.new(2, 4, -2),  -- bird position relative to Momotaro
     },
 }
 

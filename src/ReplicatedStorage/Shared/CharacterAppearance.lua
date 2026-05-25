@@ -1,6 +1,8 @@
 -- CharacterAppearance.lua
 -- Visual look per character. Bootstrap calls CharacterAppearance.apply when a
 -- player spawns as that character, after their HP and walk speed are set.
+
+local Players = game:GetService("Players")
 --
 -- For each character, the Data table lists:
 --   Body         - colors for the standard HumanoidDescription slots
@@ -81,21 +83,26 @@ CharacterAppearance.Data = {
         },
         Accessories = {
             -- Iconic stretched neck — head floats high above the torso with
-            -- a pale column connecting them. Always visible in her base form;
-            -- Disguise (when she copies a Warden) hides this. TODO: have
-            -- DisguiseService un-stretch on apply / re-stretch on drop.
-            {Type = "StretchedNeck", SegmentStuds = 4, SkinColor = Color3.fromHex("f5e3d4")},
+            -- a pale column connecting them. Per spec: neck must be LONGER
+            -- than the rest of her body (~4 studs from torso to feet), so 6.
+            -- Always visible in her base form; Disguise (when she copies a
+            -- Warden) hides this. TODO: have DisguiseService un-stretch on
+            -- apply / re-stretch on drop.
+            {Type = "StretchedNeck", SegmentStuds = 6, SkinColor = Color3.fromHex("f5e3d4")},
             -- Obi sash (darker red) with a knot in front
             {Type = "Sash", Color = Color3.fromHex("4a0e0e")},
             -- Red folding fan held in her left hand
             {Type = "FanInHand", Color = Color3.fromHex("b22222"), HandleColor = Color3.fromHex("1a1a1a")},
         },
         Catalog = {
+            -- Full avatar Bundle — the red kimono character from the Creator
+            -- Store. Replaces body + clothing + accessories with the bundle's,
+            -- which is exactly what we want for Rokurokubi's base look. Our
+            -- own accessories (stretched neck, fan) still get welded on top.
+            Bundle = 13358640198,
             -- TODO when art lands:
-            -- Hair  = "rbxassetid://...",  -- spec: long black, hair ornament with red beads
-            -- Face  = "rbxassetid://...",  -- spec: red eyes, white painted face, dark lips/teeth
-            -- Shirt = "rbxassetid://...",  -- spec: red kimono with cherry-blossom pattern
-            -- Pants = "rbxassetid://...",  -- spec: matching kimono fabric
+            -- Hair  = ...   -- (only needed if the bundle's hair doesn't match — spec: black with red beads)
+            -- Face  = ...   -- (only needed if the bundle's face doesn't match — spec: red eyes, white paint)
         },
     },
 
@@ -167,16 +174,64 @@ function CharacterAppearance.apply(player, characterName)
     local humanoid = character:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
 
-    -- 1. Body colors via HumanoidDescription.
-    if data.Body then
-        local desc = humanoid:GetAppliedDescription()
-        if data.Body.Head     then desc.HeadColor     = data.Body.Head end
-        if data.Body.LeftArm  then desc.LeftArmColor  = data.Body.LeftArm end
-        if data.Body.RightArm then desc.RightArmColor = data.Body.RightArm end
-        if data.Body.Torso    then desc.TorsoColor    = data.Body.Torso end
-        if data.Body.LeftLeg  then desc.LeftLegColor  = data.Body.LeftLeg end
-        if data.Body.RightLeg then desc.RightLegColor = data.Body.RightLeg end
+    -- 1. Body colors + clothing/accessory setup via HumanoidDescription.
+    --
+    -- Two paths depending on Catalog.Bundle:
+    --   A. Catalog.Bundle is set -> fetch that bundle's full description and
+    --      use it as the base. Body colors + clothing + accessories all come
+    --      from the bundle. We can still override Hair/Face on top.
+    --   B. No Bundle -> start from the player's current description, overwrite
+    --      our body colors, wipe their personal clothing/accessories so their
+    --      avatar doesn't cover our look, then add our chosen catalog items.
+    if data.Body or data.Catalog then
+        local desc
+        local fromBundle = false
 
+        if data.Catalog and data.Catalog.Bundle then
+            local bundleId = tonumber(data.Catalog.Bundle)
+            if bundleId then
+                local ok, bundleDesc = pcall(function()
+                    return Players:GetHumanoidDescriptionFromBundleId(bundleId)
+                end)
+                if ok and bundleDesc then
+                    desc = bundleDesc
+                    fromBundle = true
+                end
+            end
+        end
+
+        if not desc then
+            desc = humanoid:GetAppliedDescription()
+        end
+
+        -- Body color overrides (apply on top of whatever the base set).
+        if data.Body then
+            if data.Body.Head     then desc.HeadColor     = data.Body.Head end
+            if data.Body.LeftArm  then desc.LeftArmColor  = data.Body.LeftArm end
+            if data.Body.RightArm then desc.RightArmColor = data.Body.RightArm end
+            if data.Body.Torso    then desc.TorsoColor    = data.Body.Torso end
+            if data.Body.LeftLeg  then desc.LeftLegColor  = data.Body.LeftLeg end
+            if data.Body.RightLeg then desc.RightLegColor = data.Body.RightLeg end
+        end
+
+        -- Only wipe if we started from the player's avatar (not from a bundle).
+        if not fromBundle then
+            desc.Shirt          = 0
+            desc.Pants          = 0
+            desc.GraphicTShirt  = 0
+            desc.HatAccessory   = ""
+            desc.HairAccessory  = ""
+            desc.FaceAccessory  = ""
+            desc.NeckAccessory  = ""
+            desc.ShouldersAccessory = ""
+            desc.FrontAccessory = ""
+            desc.BackAccessory  = ""
+            desc.WaistAccessory = ""
+        end
+
+        -- Catalog overrides (hair, face, shirt, pants). These run AFTER the
+        -- bundle/wipe so they can override individual slots without losing
+        -- the rest.
         if data.Catalog then
             if data.Catalog.Hair  then desc.HairAccessory = data.Catalog.Hair end
             if data.Catalog.Face  then desc.Face = tonumber(data.Catalog.Face) or 0 end
@@ -320,8 +375,18 @@ function CharacterAppearance._buildAccessory(character, parent, spec)
         -- column between the torso and the new head spot.
         local upperTorso = character:FindFirstChild("UpperTorso")
         local head = character:FindFirstChild("Head")
-        local neck = upperTorso and upperTorso:FindFirstChild("Neck")
-        if not upperTorso or not head or not neck or not neck:IsA("Motor6D") then return end
+        if not upperTorso or not head then return end
+
+        -- The Neck Motor6D in R15 lives inside the Head, not UpperTorso.
+        -- Search the whole character to be safe across rig variations.
+        local neck = nil
+        for _, descendant in ipairs(character:GetDescendants()) do
+            if descendant:IsA("Motor6D") and descendant.Name == "Neck" then
+                neck = descendant
+                break
+            end
+        end
+        if not neck then return end
 
         -- Offset the head joint upward
         neck.C0 = neck.C0 * CFrame.new(0, spec.SegmentStuds, 0)
