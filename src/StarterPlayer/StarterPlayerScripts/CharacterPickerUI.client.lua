@@ -13,9 +13,9 @@ local CharacterPicker = Remotes:WaitForChild("CharacterPicker")
 
 -- Display labels per character key.
 local LABELS = {
-    Momotaro   = "Momotaro",
-    Rokurokubi = "Rokurokubi",
-    GirlA      = "Girl A",
+	Momotaro   = "Momotaro",
+	Rokurokubi = "Rokurokubi",
+	GirlA      = "Girl A",
 }
 
 ------------------------------------------------------------------------------
@@ -74,10 +74,10 @@ rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 rowLayout.Parent = buttonRow
 
 local function close()
-    screenGui.Enabled = false
-    for _, child in ipairs(buttonRow:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
+	screenGui.Enabled = false
+	for _, child in ipairs(buttonRow:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
 end
 
 ------------------------------------------------------------------------------
@@ -85,37 +85,37 @@ end
 ------------------------------------------------------------------------------
 
 local function open(options)
-    -- Clear any old buttons
-    for _, child in ipairs(buttonRow:GetChildren()) do
-        if child:IsA("TextButton") then child:Destroy() end
-    end
+	-- Clear any old buttons
+	for _, child in ipairs(buttonRow:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
 
-    for i, characterKey in ipairs(options) do
-        local button = Instance.new("TextButton")
-        button.Size = UDim2.new(1 / #options, -8, 1, 0)
-        button.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
-        button.TextColor3 = Color3.fromRGB(255, 255, 255)
-        button.Font = Enum.Font.GothamBold
-        button.TextScaled = true
-        button.Text = LABELS[characterKey] or characterKey
-        button.LayoutOrder = i
-        button.Parent = buttonRow
+	for i, characterKey in ipairs(options) do
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(1 / #options, -8, 1, 0)
+		button.BackgroundColor3 = Color3.fromRGB(60, 60, 90)
+		button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		button.Font = Enum.Font.GothamBold
+		button.TextScaled = true
+		button.Text = LABELS[characterKey] or characterKey
+		button.LayoutOrder = i
+		button.Parent = buttonRow
 
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.CornerRadius = UDim.new(0, 10)
-        btnCorner.Parent = button
+		local btnCorner = Instance.new("UICorner")
+		btnCorner.CornerRadius = UDim.new(0, 10)
+		btnCorner.Parent = button
 
-        button.MouseButton1Click:Connect(function()
-            -- Disable all buttons so they can't double-pick
-            for _, sibling in ipairs(buttonRow:GetChildren()) do
-                if sibling:IsA("TextButton") then sibling.AutoButtonColor = false end
-            end
-            CharacterPicker:FireServer(characterKey)
-            close()
-        end)
-    end
+		button.MouseButton1Click:Connect(function()
+			-- Disable all buttons so they can't double-pick
+			for _, sibling in ipairs(buttonRow:GetChildren()) do
+				if sibling:IsA("TextButton") then sibling.AutoButtonColor = false end
+			end
+			CharacterPicker:FireServer(characterKey)
+			close()
+		end)
+	end
 
-    screenGui.Enabled = true
+	screenGui.Enabled = true
 end
 
 ------------------------------------------------------------------------------
@@ -123,11 +123,11 @@ end
 ------------------------------------------------------------------------------
 
 CharacterPicker.OnClientEvent:Connect(function(optionsOrNil)
-    if optionsOrNil == nil then
-        close()
-        return
-    end
-    if type(optionsOrNil) == "table" then
-        open(optionsOrNil)
-    end
+	if optionsOrNil == nil then
+		close()
+		return
+	end
+	if type(optionsOrNil) == "table" then
+		open(optionsOrNil)
+	end
 end)
