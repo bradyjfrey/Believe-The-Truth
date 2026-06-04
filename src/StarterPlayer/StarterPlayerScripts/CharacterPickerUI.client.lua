@@ -38,7 +38,7 @@ backdrop.BorderSizePixel = 0
 backdrop.Parent = screenGui
 
 local panel = Instance.new("Frame")
-panel.Size = UDim2.fromOffset(360, 320)
+panel.Size = UDim2.fromOffset(440, 320)
 panel.Position = UDim2.fromScale(0.5, 0.5)
 panel.AnchorPoint = Vector2.new(0.5, 0.5)
 panel.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
@@ -49,43 +49,29 @@ local panelCorner = Instance.new("UICorner")
 panelCorner.CornerRadius = UDim.new(0, 12)
 panelCorner.Parent = panel
 
-local panelPadding = Instance.new("UIPadding")
-panelPadding.PaddingTop    = UDim.new(0, 20)
-panelPadding.PaddingBottom = UDim.new(0, 20)
-panelPadding.PaddingLeft   = UDim.new(0, 20)
-panelPadding.PaddingRight  = UDim.new(0, 20)
-panelPadding.Parent = panel
-
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 36)
+title.Size = UDim2.new(1, -40, 0, 60)
+title.Position = UDim2.fromOffset(20, 20)
 title.BackgroundTransparency = 1
 title.Text = "Pick your Yokai"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 24                -- fixed size — no auto-scaling
+title.TextScaled = true
 title.Font = Enum.Font.GothamBold
-title.LayoutOrder = 0
 title.Parent = panel
 
 local buttonRow = Instance.new("Frame")
-buttonRow.Size = UDim2.new(1, 0, 1, -56)
+buttonRow.Size = UDim2.new(1, -40, 1, -100)
+buttonRow.Position = UDim2.fromOffset(20, 90)
 buttonRow.BackgroundTransparency = 1
-buttonRow.LayoutOrder = 1
 buttonRow.Parent = panel
 
 local rowLayout = Instance.new("UIListLayout")
-rowLayout.FillDirection = Enum.FillDirection.Vertical          -- stack buttons top-to-bottom
+rowLayout.FillDirection = Enum.FillDirection.Horizontal
 rowLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-rowLayout.Padding = UDim.new(0, 12)
+rowLayout.Padding = UDim.new(0, 16)
 rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 rowLayout.Parent = buttonRow
-
-local panelListLayout = Instance.new("UIListLayout")
-panelListLayout.FillDirection = Enum.FillDirection.Vertical
-panelListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-panelListLayout.Padding = UDim.new(0, 16)
-panelListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-panelListLayout.Parent = panel
 
 local function close()
 	screenGui.Enabled = false
