@@ -31,6 +31,43 @@ local function publish(key, value)
 	end
 end
 
+------------------------------------------------------------------------------
+-- Spawning helpers
+--
+-- WHERE players appear is controlled by named marker Parts the art team places
+-- in the Workspace. They aren't in git (Workspace isn't synced), so we find them
+-- by name and fall back to a safe spot if one is ever missing:
+--   * "LobbySpawn"  - in the Finished Lobby; where everyone waits and hangs out
+--   * "WardenSpawn" - in Map 1; where the survivors (Wardens) start (blue area)
+--   * "YokaiSpawn"  - in Map 1; where the killer (Yokai) starts, away from the
+--                     Wardens so it's fair (red area)
+------------------------------------------------------------------------------
+
+-- How far (in studs) to randomly spread players around a marker so a whole team
+-- doesn't pile up on the exact same point.
+local SPAWN_SCATTER = 6
+
+-- Find a marker Part anywhere in the Workspace by its (unique) name.
+local function markerCFrame(name, fallback)
+	local marker = workspace:FindFirstChild(name, true)
+	if marker and marker:IsA("BasePart") then
+		return marker.CFrame
+	end
+	warn("[RoundService] spawn marker '" .. name .. "' not found - using a fallback spot")
+	return fallback
+end
+
+-- Spawn the player and drop them at `baseCFrame` (a few studs up so they don't
+-- clip into the floor), nudged a little so multiple players don't stack.
+local function spawnPlayerAt(player, baseCFrame)
+	player:LoadCharacter()
+	local character = player.Character or player.CharacterAdded:Wait()
+	character:WaitForChild("HumanoidRootPart")
+	local ox = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
+	local oz = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
+	character:PivotTo(baseCFrame * CFrame.new(ox, 3, oz))
+end
+
 local state = Types.RoundState.Lobby
 local roundEndTime = 0
 local lobbyEndTime = 0
@@ -91,6 +128,16 @@ function RoundService:GetYokai()
 	return list
 end
 
+-- Called by Bootstrap when a player joins. Drop them into the lobby with a body
+-- so they can walk around while waiting. A player who joins mid-round also waits
+-- in the lobby (no spectating) and gets pulled into the next round automatically.
+function RoundService:OnPlayerJoined(player)
+	if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+		return  -- already has a body (e.g. a state transition just spawned them)
+	end
+	spawnPlayerAt(player, markerCFrame("LobbySpawn", CFrame.new(0, 10, 0)))
+end
+
 ------------------------------------------------------------------------------
 -- State transitions
 ------------------------------------------------------------------------------
@@ -120,8 +167,10 @@ function RoundService:_enterLobby()
 	-- and the character keeps its round styling in the lobby.
 	task.wait()
 
+	-- Respawn everyone back in the lobby to hang out while waiting.
+	local lobbyCFrame = markerCFrame("LobbySpawn", CFrame.new(0, 10, 0))
 	for _, player in ipairs(Players:GetPlayers()) do
-		player:LoadCharacter()
+		spawnPlayerAt(player, lobbyCFrame)
 	end
 
 	-- Clean up any hotspots from last round.
@@ -173,7 +222,10 @@ function RoundService:_enterRound()
 	print(string.format("[RoundService] Yokai options: [%s], chosen -> %s",
 		table.concat(yokaiOptions, ", "), yokaiCharacter))
 
-	-- Assign teams + characters and respawn so the character gets fresh HP.
+	-- Assign teams + characters and respawn (fresh HP) at the team's spot in Map 1.
+	-- The killer (Yokai) starts in the red area, survivors (Wardens) in the blue area.
+	local wardenCFrame = markerCFrame("WardenSpawn", CFrame.new(0, 50, 0))
+	local yokaiCFrame = markerCFrame("YokaiSpawn", CFrame.new(40, 50, 0))
 	for _, player in ipairs(players) do
 		if player == yokaiPlayer then
 			playerTeam[player.UserId] = Types.Team.Yokai
@@ -185,7 +237,8 @@ function RoundService:_enterRound()
 		player:SetAttribute("Team", playerTeam[player.UserId])
 		player:SetAttribute("Character", playerCharacter[player.UserId])
 		abilityService:SetCharacter(player, playerCharacter[player.UserId])
-		player:LoadCharacter()
+		local spawnAt = (playerTeam[player.UserId] == Types.Team.Yokai) and yokaiCFrame or wardenCFrame
+		spawnPlayerAt(player, spawnAt)
 	end
 
 	-- Spawn placeholder Hotspots so Girl A's Incognito teleport works.

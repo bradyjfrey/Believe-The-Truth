@@ -146,7 +146,12 @@ local function watchPlayer(player)
     end
 end
 
-Players.PlayerAdded:Connect(watchPlayer)
+Players.PlayerAdded:Connect(function(player)
+    watchPlayer(player)
+    -- Give joiners a body in the lobby right away (otherwise they'd sit bodiless
+    -- on a sky-view camera until the next round transition).
+    RoundService:OnPlayerJoined(player)
+end)
 for _, player in ipairs(Players:GetPlayers()) do
     watchPlayer(player)
 end
