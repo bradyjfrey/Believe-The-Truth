@@ -8,10 +8,14 @@
 
 # Artifacts
 /*.lock
-/*.rbxl
-/*.rbxlx
 /*.rbxm
 /*.rbxmx
+
+# Place-file backups are big binaries — never commit them, in any folder.
+# (Small .rbxm model exports under assets/ ARE intentionally tracked, so they
+#  stay allowed — only the full-place .rbxl/.rbxlx are blocked everywhere.)
+*.rbxl
+*.rbxlx
 
 # Misc
 .DS_Store
