@@ -17,5 +17,13 @@
 *.rbxl
 *.rbxlx
 
+# Audio source files — big binaries; upload to Roblox for asset IDs instead of
+# committing. Keep them in assets/music/ locally; the repo tracks the IDs only.
+*.mp3
+*.ogg
+*.wav
+*.flac
+*.m4a
+
 # Misc
 .DS_Store

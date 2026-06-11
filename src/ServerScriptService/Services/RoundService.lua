@@ -11,6 +11,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local SoundService = game:GetService("SoundService")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -21,6 +22,17 @@ local RoundService = {}
 -- so we don't get repeated sequences across test sessions like math.random
 -- sometimes does.
 local rng = Random.new()
+
+-- Lobby background music. The script makes this Sound itself (no need to keep one in
+-- the place); a server-owned Sound in SoundService replicates to every client, so
+-- everyone hears it. It plays while waiting in the lobby and stops when a round starts.
+-- TODO: move the id into Constants once we add more tracks (map themes, etc.).
+local lobbyMusic = Instance.new("Sound")
+lobbyMusic.Name = "LobbyMusic"
+lobbyMusic.SoundId = "rbxassetid://115719912767412"
+lobbyMusic.Looped = true
+lobbyMusic.Volume = 0.5
+lobbyMusic.Parent = SoundService
 
 -- Publishes the current round state to the client HUD by setting attributes
 -- on ReplicatedStorage/Remotes. The HUD just reads these attributes.
@@ -147,6 +159,11 @@ function RoundService:_enterLobby()
 	playerCharacter = {}
 	playerTeam = {}
 
+	-- Start the lobby music (if it isn't already going from a previous lobby).
+	if not lobbyMusic.IsPlaying then
+		lobbyMusic:Play()
+	end
+
 	if disguiseService then disguiseService:DropAll() end
 
 	-- Clear per-player state FIRST in a single pass so the Character attribute
@@ -187,6 +204,9 @@ end
 
 function RoundService:_enterRound()
 	state = Types.RoundState.InRound
+
+	-- Hunt's on — cut the lobby music.
+	lobbyMusic:Stop()
 
 	local players = Players:GetPlayers()
 	if #players < Constants.Round.MinPlayers then
