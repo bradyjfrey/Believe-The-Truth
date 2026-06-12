@@ -34,6 +34,17 @@ lobbyMusic.Looped = true
 lobbyMusic.Volume = 0.5
 lobbyMusic.Parent = SoundService
 
+-- In-round "chase" music (CODE RED). Same idea as the lobby music: a server-owned
+-- Sound that everyone hears. It plays while a round is happening and stops the moment
+-- we go back to the lobby. (This audio may be pending Roblox moderation — the code is
+-- ready and it'll start playing on its own once Roblox approves the upload.)
+local roundMusic = Instance.new("Sound")
+roundMusic.Name = "RoundMusic"
+roundMusic.SoundId = "rbxassetid://116756933501242"
+roundMusic.Looped = true
+roundMusic.Volume = 0.5
+roundMusic.Parent = SoundService
+
 -- Publishes the current round state to the client HUD by setting attributes
 -- on ReplicatedStorage/Remotes. The HUD just reads these attributes.
 local function publish(key, value)
@@ -159,7 +170,8 @@ function RoundService:_enterLobby()
 	playerCharacter = {}
 	playerTeam = {}
 
-	-- Start the lobby music (if it isn't already going from a previous lobby).
+	-- Back in the lobby — stop the chase music and start the calm lobby music.
+	roundMusic:Stop()
 	if not lobbyMusic.IsPlaying then
 		lobbyMusic:Play()
 	end
@@ -205,8 +217,9 @@ end
 function RoundService:_enterRound()
 	state = Types.RoundState.InRound
 
-	-- Hunt's on — cut the lobby music.
+	-- Hunt's on — cut the lobby music and start the chase music.
 	lobbyMusic:Stop()
+	roundMusic:Play()
 
 	local players = Players:GetPlayers()
 	if #players < Constants.Round.MinPlayers then

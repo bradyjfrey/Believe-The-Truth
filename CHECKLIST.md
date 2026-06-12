@@ -5,7 +5,13 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 
 ## ✅ Done
 - [x] GirlA fully dressed (rig flattened, costume welded, fire VFX, hair) — recipe in `tools/dress-girla.luau`
+- [x] Momotaro fully dressed (added missing Head + Neck, mask + hair on head, robe/webbing welded) — recipe in `tools/dress-momotaro.luau`
 - [x] Lobby + map spawn flow — hang out in the lobby while waiting; teams split to blue (Warden) / red (Yokai) on round start; back to lobby on round end
+- [x] Lobby + in-round music (lobby theme + CODE RED chase theme; chase audio pending Roblox moderation)
+
+## 🐞 Known issues (check later, not blocking)
+- [ ] **Dressed Momotaro couldn't move in the lobby** (test as StarterCharacter). He moved fine *in-round* earlier. Could be: spawning stuck in lobby geometry, controls disabled in the Lobby state, or something about the custom character + lobby spawn. Re-check once dressed models are wired into the real spawn flow.
+- [ ] **Borrowed body's arms freeze when the player is the Yokai** (during the StarterCharacter test, Momotaro's arms didn't move as Yokai but did as Warden). Likely the Yokai role applies its own arm pose/ability — expected to disappear once each role uses its own real model. Verify when wiring per-role models.
 
 ## 🔜 Core build (the critical path to "all three characters real")
 - [ ] **Dress Momotaro** (same recipe as GirlA; he also needs a Head added — his rig has none)
