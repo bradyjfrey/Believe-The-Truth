@@ -6,11 +6,14 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 ## ✅ Done
 - [x] GirlA fully dressed (rig flattened, costume welded, fire VFX, hair) — recipe in `tools/dress-girla.luau`
 - [x] Momotaro fully dressed (added missing Head + Neck, mask + hair on head, robe/webbing welded) — recipe in `tools/dress-momotaro.luau`
+- [x] Rokurokubi fully done (flattened, faces forward, arms folded + frozen, floats) + **segmented 12-piece neck that waves like a cartoon snake** — `tools/dress-rokurokubi.luau`, `build-neck-chain.luau`, `finalize-rokurokubi.luau`, `rokurokubi-NeckWave.luau` (lives in StarterCharacterScripts)
+- [x] Momotaro's companion bird (Hawk) — hovers off his shoulder + flaps (`tools/companion-bird.server.luau`)
 - [x] Lobby + map spawn flow — hang out in the lobby while waiting; teams split to blue (Warden) / red (Yokai) on round start; back to lobby on round end
 - [x] Lobby + in-round music (lobby theme + CODE RED chase theme; chase audio pending Roblox moderation)
 
 ## 🐞 Known issues (check later, not blocking)
 - [ ] **Dressed Momotaro couldn't move in the lobby** (test as StarterCharacter). He moved fine *in-round* earlier. Could be: spawning stuck in lobby geometry, controls disabled in the Lobby state, or something about the custom character + lobby spawn. Re-check once dressed models are wired into the real spawn flow.
+- [ ] **Momotaro can't jump, but GirlA + Rokurokubi can** — inconsistency in the dressed models; likely his rig (the added Head/Neck or a HumanoidRootPart difference). Look into it later.
 - [ ] **Borrowed body's arms freeze when the player is the Yokai** (during the StarterCharacter test, Momotaro's arms didn't move as Yokai but did as Warden). Likely the Yokai role applies its own arm pose/ability — expected to disappear once each role uses its own real model. Verify when wiring per-role models.
 
 ## 🔜 Core build (the critical path to "all three characters real")
@@ -18,6 +21,7 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 - [ ] **Dress Rokurokubi** (same recipe; her rig is deep-nested + her neck is a separate special piece)
 - [ ] **Wire dressed models into the round spawn** — graft onto `RoundService._enterRound`: clone the dressed model → set as `player.Character` at the team spot, skip the old recolor, sort the Animate script. *(Do once all three are dressed so they swap in together.)*
 - [ ] **Re-rig the 2 companion dogs** (the rig didn't persist) + hand-made walk-cycle animation (daughter's job)
+- [ ] **Momotaro's companion bird (Hawk)** — behavior DONE (`tools/companion-bird.server.luau`): hovers off his right shoulder/above his head and flaps in place (the asset's animation is a baked flight-circle; the script cancels the travel by pinning the body bone). Stored in `ReplicatedStorage.Companions`. STILL TO DO: clone it beside the Momotaro player at spawn (same seam as the dogs) and fine-tune the shoulder offset against the real character.
 - [ ] **Build the Effects** (`GirlASlash`, etc. — currently empty stubs that `EffectsService:Play` calls by name)
 - [ ] **Build the Weapons** (GirlA's Hatchet — weld to her hand; pick a grip part)
 
