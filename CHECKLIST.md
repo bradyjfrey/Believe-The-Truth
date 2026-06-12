@@ -19,7 +19,7 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 ## 🔜 Core build (the critical path to "all three characters real")
 - [ ] **Dress Momotaro** (same recipe as GirlA; he also needs a Head added — his rig has none)
 - [ ] **Dress Rokurokubi** (same recipe; her rig is deep-nested + her neck is a separate special piece)
-- [ ] **Wire dressed models into the round spawn** — graft onto `RoundService._enterRound`: clone the dressed model → set as `player.Character` at the team spot, skip the old recolor, sort the Animate script. *(Do once all three are dressed so they swap in together.)*
+- [ ] **Wire dressed models into the round spawn** — all three are dressed now, so they can swap in together. Full grounded plan in **`PLAN_dressed_model_spawn.md`** (seam = `spawnPlayerAt`; mapping already exists; skip `CharacterAppearance.apply`; do Momotaro end-to-end first; ~1 focused session).
 - [ ] **Re-rig the 2 companion dogs** (the rig didn't persist) + hand-made walk-cycle animation (daughter's job)
 - [ ] **Momotaro's companion bird (Hawk)** — behavior DONE (`tools/companion-bird.server.luau`): hovers off his right shoulder/above his head and flaps in place (the asset's animation is a baked flight-circle; the script cancels the travel by pinning the body bone). Stored in `ReplicatedStorage.Companions`. STILL TO DO: clone it beside the Momotaro player at spawn (same seam as the dogs) and fine-tune the shoulder offset against the real character.
 - [ ] **Build the Effects** (`GirlASlash`, etc. — currently empty stubs that `EffectsService:Play` calls by name)
