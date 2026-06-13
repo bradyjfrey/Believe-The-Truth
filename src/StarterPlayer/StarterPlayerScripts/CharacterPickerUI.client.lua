@@ -39,24 +39,35 @@ local CONFIG = {
 	-- How far the 3D model is allowed to poke ABOVE the top of the card (pixels).
 	avatarPeek = 70,
 
-	-- Camera framing for the little 3D portraits. Nudge these if a model sits too high/low/zoomed.
-	cameraDistanceMult = 2.4,   -- bigger = model further away (smaller in the box)
-	cameraHeightFrac   = 0.10,  -- how high the camera floats vs the model height
-	aimHeightFrac      = 0.55,  -- where the camera looks (0 = feet, 1 = top); higher = head sits lower
+	-- Gap (px) between the bottom of the title/countdown block and where the avatars peek over the
+	-- cards. Bigger = title sits higher. (The avatars cap how low the title can go.)
+	headerGap = 28,
+
+	-- Portrait camera framing. Per-character zoom/drop lives in the CAMERA table below; these are global.
+	cameraDistanceMult = 2.4,    -- bigger = model smaller in the box
+	cameraAimFrac      = 0.05,   -- look slightly above the framing center (fraction of model size)
+	cameraEyeFrac      = 0.10,   -- camera floats a bit above the look point
 	fieldOfView        = 28,
-	spinSpeed          = 0.6,   -- radians/sec turntable spin
+	spinSpeed          = 0.6,    -- radians/sec turntable spin
 
 	-- Card background = the uploaded diagonal-stripe tile. tileSize sets stripe thickness on screen
 	-- (smaller = finer stripes). The source tile is 128px and tiles seamlessly.
 	stripeImage = "rbxassetid://119070341954890",
 	stripeTile  = 64,
 
-	-- The "CHOOSE YOUR YOKAI" title, baked in Cinzel Decorative (it's fixed text, so it's an image).
-	-- Source PNG is 2293x337 -> aspect ~6.8:1.
-	titleImage  = "rbxassetid://116198292162889",
+	-- Lock icon for the "coming soon" card (source is 160x160; we draw it smaller via lockSize).
+	lockImage   = "rbxassetid://127360932839161",
+	lockSize    = 84,
 
-	-- Fonts. Swap freely. Merriweather is the closest built-in to the mockup's serif title.
-	titleFont = Enum.Font.Merriweather,
+	-- Height of the chin (the name strip) at the bottom of each card.
+	chinHeight  = 88,
+
+	-- Show a trailing locked "coming soon" card after the real options.
+	showLockedSlot = true,
+
+	-- Fonts. titleFont = the gothic display font (Grenze Gotisch, built into Roblox) for the title
+	-- + character names; bodyFont = clean sans for "KILLER" and the countdown.
+	titleFont = Enum.Font.GrenzeGotisch,
 	bodyFont  = Enum.Font.GothamBold,
 }
 
@@ -80,6 +91,16 @@ local LABELS = {
 	GirlA      = "Girl A",
 }
 
+-- Per-character framing tweaks on top of the automatic fit.
+--   zoom: >1 = smaller/further, <1 = bigger/closer.
+--   drop: studs to shift the model DOWN in the box (raises the camera's look point).
+local CAMERA = {
+	GirlA      = { zoom = 1.15, drop = 0 },    -- a touch smaller
+	Rokurokubi = { zoom = 0.7,  drop = 0.8 },  -- bigger, and nudged down
+	Momotaro   = { zoom = 1.0,  drop = 0 },
+}
+local DEFAULT_CAM = { zoom = 1.0, drop = 0 }
+
 ----------------------------------------------------------------------------------------------------
 -- Build the parts of the screen that never change (backdrop, title, countdown).
 -- Cards get built fresh every time the picker opens, because the option list can differ.
@@ -100,8 +121,8 @@ screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
 local backdrop = Instance.new("Frame")
 backdrop.Size = UDim2.fromScale(1, 1)
 backdrop.BackgroundColor3 = COLOR.bgDarkest
--- Half-transparent so the lobby/scene behind shows through and frames the selection.
-backdrop.BackgroundTransparency = 0.45
+-- Mostly opaque + dark, with only a subtle hint of the scene showing through behind it.
+backdrop.BackgroundTransparency = 0.25
 backdrop.BorderSizePixel = 0
 backdrop.Parent = screenGui
 
@@ -137,25 +158,29 @@ gameTitle.Parent = backdrop
 -- We anchor the header above screen-center and the card row at center so the spacing feels like
 -- the mockup (tight gap title->clock, big gap clock->cards).
 local header = Instance.new("Frame")
-header.Size = UDim2.fromOffset(700, 120)
-header.AnchorPoint = Vector2.new(0.5, 1)
-header.Position = UDim2.new(0.5, 0, 0.5, -(CONFIG.cardHeight / 2) - 120)
+header.Size = UDim2.fromOffset(1000, 156)
+header.AnchorPoint = Vector2.new(0.5, 1)   -- anchored by its BOTTOM
+-- Sit the header just above where the avatars peek over the cards (cards are centered on screen).
+header.Position = UDim2.new(0.5, 0, 0.5,
+	-(CONFIG.cardHeight / 2 + CONFIG.avatarPeek + CONFIG.headerGap))
 header.BackgroundTransparency = 1
 header.Parent = backdrop
 
--- Title is the baked Cinzel Decorative image, centered. ScaleType Fit keeps it from distorting.
-local titleLabel = Instance.new("ImageLabel")
-titleLabel.AnchorPoint = Vector2.new(0.5, 0)
-titleLabel.Position = UDim2.new(0.5, 0, 0, 0)
-titleLabel.Size = UDim2.fromOffset(440, 64)
+-- Title in the gothic display font. "Yokai" is bright red via RichText.
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 96)
+titleLabel.Position = UDim2.fromScale(0, 0)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Image = CONFIG.titleImage
-titleLabel.ScaleType = Enum.ScaleType.Fit
+titleLabel.RichText = true
+titleLabel.Text = 'CHOOSE YOUR <font color="#ff3b41">YOKAI</font>'
+titleLabel.TextColor3 = COLOR.ink
+titleLabel.TextSize = 90
+titleLabel.Font = CONFIG.titleFont
 titleLabel.Parent = header
 
 local countdownLabel = Instance.new("TextLabel")
 countdownLabel.Size = UDim2.new(1, 0, 0, 40)
-countdownLabel.Position = UDim2.fromOffset(0, 68)   -- tight gap under the title
+countdownLabel.Position = UDim2.fromOffset(0, 108)   -- tight gap under the title
 countdownLabel.BackgroundTransparency = 1
 countdownLabel.RichText = true
 countdownLabel.TextColor3 = COLOR.bloodBright
@@ -208,13 +233,39 @@ end
 -- The viewport is transparent and taller than the card, so the model appears to float above the box.
 ----------------------------------------------------------------------------------------------------
 
+-- The framing box for the portrait. Normally the model's full bounding box, BUT if the model has a
+-- stretchy neck chain we exclude the neck segments + the head on top of it -- otherwise the long
+-- neck inflates the box and the camera zooms the whole character out tiny. With it excluded, the
+-- body frames nicely and the neck just runs up out of the top of the box.
+local function framingBox(model)
+	local neck = model:FindFirstChild("NeckChain", true)
+	if neck then
+		local minV, maxV
+		for _, p in ipairs(model:GetDescendants()) do
+			if p:IsA("BasePart") and not p:IsDescendantOf(neck) and p.Name ~= "Head" then
+				local lo = p.Position - p.Size * 0.5
+				local hi = p.Position + p.Size * 0.5
+				minV = minV and minV:Min(lo) or lo
+				maxV = maxV and maxV:Max(hi) or hi
+			end
+		end
+		if minV then
+			local size = maxV - minV
+			return (minV + maxV) * 0.5, math.max(size.X, size.Y, size.Z)
+		end
+	end
+	local cf, size = model:GetBoundingBox()
+	return cf.Position, math.max(size.X, size.Y, size.Z)
+end
+
 local function buildViewport(characterKey)
 	local viewport = Instance.new("ViewportFrame")
 	viewport.BackgroundTransparency = 1
-	-- Cover the card and reach above it by `avatarPeek` so the head can poke out the top.
-	viewport.Size = UDim2.new(1, 0, 1, CONFIG.avatarPeek)
+	-- Covers the PORTRAIT area (card minus the chin) plus a peek above the card top. The viewport's
+	-- own rectangle crops the model at the seam, so the figure stands "behind" the name strip.
+	viewport.Size = UDim2.new(1, 0, 0, (CONFIG.cardHeight - CONFIG.chinHeight) + CONFIG.avatarPeek)
 	viewport.Position = UDim2.new(0, 0, 0, -CONFIG.avatarPeek)
-	viewport.ZIndex = 2   -- above the card's textured background, below the chin
+	viewport.ZIndex = 12   -- ABOVE the borders, so the model peeks over the top edge (not behind it)
 
 	-- Viewports have their own little lighting rig; without this, models render almost black.
 	viewport.Ambient = Color3.fromRGB(120, 118, 124)
@@ -243,12 +294,13 @@ local function buildViewport(characterKey)
 	end
 	model.Parent = world
 
-	-- Frame the camera on the model from its size.
-	local pivot, size = model:GetBoundingBox()
-	local maxExtent = math.max(size.X, size.Y, size.Z)
-	local distance = maxExtent * CONFIG.cameraDistanceMult
-	local lookAt = pivot.Position + Vector3.new(0, size.Y * (CONFIG.aimHeightFrac - 0.5), 0)
-	local camPos = lookAt + Vector3.new(0, size.Y * CONFIG.cameraHeightFrac, distance)
+	-- Stand the camera back from the framing box (neck excluded), with a small upward aim/float.
+	local center, extent = framingBox(model)
+	local camCfg = CAMERA[characterKey] or DEFAULT_CAM
+	local distance = extent * CONFIG.cameraDistanceMult * camCfg.zoom
+	-- Look a bit above center; `drop` raises the look point further so the model sits lower in the box.
+	local lookAt = center + Vector3.new(0, extent * CONFIG.cameraAimFrac + camCfg.drop, 0)
+	local camPos = lookAt + Vector3.new(0, extent * CONFIG.cameraEyeFrac, distance)
 
 	local camera = Instance.new("Camera")
 	camera.FieldOfView = CONFIG.fieldOfView
@@ -271,74 +323,60 @@ end
 -- Build one card (background + portrait + chin) and wire its hover / click behavior.
 ----------------------------------------------------------------------------------------------------
 
-local function buildCard(characterKey, layoutOrder)
+local function buildCard(characterKey, layoutOrder, isLocked)
 	-- The card is a button so the whole thing is clickable; we handle our own hover colors.
 	local card = Instance.new("TextButton")
-	card.Name = characterKey
+	card.Name = isLocked and "Locked" or characterKey
 	card.AutoButtonColor = false
 	card.Text = ""
 	card.Size = UDim2.fromOffset(CONFIG.cardWidth, CONFIG.cardHeight)
-	card.BackgroundColor3 = COLOR.panel
+	card.BackgroundTransparency = 1   -- the rounded panel look comes from `content` below
 	card.BorderSizePixel = 0
-	card.ClipsDescendants = false   -- avatar peeks above
+	card.ClipsDescendants = false      -- so the avatar can peek above the card
 	card.LayoutOrder = layoutOrder
 	card.Parent = cardRow
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 14)
-	corner.Parent = card
+	-- CONTENT: a clipped, rounded container. Because it clips, the portrait + chin keep SQUARE
+	-- corners and the seam between them stays straight -- only the OUTER corners round. (This is what
+	-- fixes the odd rounded notch where the chin met the portrait.)
+	local content = Instance.new("Frame")
+	content.Name = "Content"
+	content.Size = UDim2.fromScale(1, 1)
+	content.BackgroundColor3 = COLOR.panel
+	content.BorderSizePixel = 0
+	content.ClipsDescendants = true
+	content.ZIndex = 1
+	content.Parent = card
+	local contentCorner = Instance.new("UICorner")
+	contentCorner.CornerRadius = UDim.new(0, 14)
+	contentCorner.Parent = content
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 2
-	stroke.Color = COLOR.borderDark
-	stroke.Parent = card
-
-	-- The textured portrait background (diagonal-ish dark stripes were decorative in the mockup;
-	-- here we keep a simple dark fill with rounded top corners, sitting BEHIND the 3D model).
-	-- The portrait background: the uploaded diagonal-stripe tile, repeated to fill.
+	-- Portrait background = the tiled stripe (square; the content clip rounds the visible corners).
 	local portraitBg = Instance.new("ImageLabel")
-	portraitBg.Size = UDim2.new(1, 0, 1, -64)   -- leave room for the chin
+	portraitBg.Size = UDim2.new(1, 0, 1, -CONFIG.chinHeight)
 	portraitBg.BackgroundColor3 = COLOR.panelDeep
 	portraitBg.BorderSizePixel = 0
 	portraitBg.Image = CONFIG.stripeImage
 	portraitBg.ScaleType = Enum.ScaleType.Tile
 	portraitBg.TileSize = UDim2.fromOffset(CONFIG.stripeTile, CONFIG.stripeTile)
-	portraitBg.ClipsDescendants = true   -- so the hover wash respects the rounded corners
 	portraitBg.ZIndex = 1
-	portraitBg.Parent = card
-	local pbCorner = Instance.new("UICorner")
-	pbCorner.CornerRadius = UDim.new(0, 12)
-	pbCorner.Parent = portraitBg
+	portraitBg.Parent = content
 
-	-- A blood-red wash that fades in on hover; hidden until then.
-	local hoverWash = Instance.new("Frame")
-	hoverWash.Size = UDim2.fromScale(1, 1)
-	hoverWash.BackgroundColor3 = COLOR.blood
-	hoverWash.BackgroundTransparency = 1
-	hoverWash.BorderSizePixel = 0
-	hoverWash.Parent = portraitBg
-
-	-- The 3D model portrait (peeks above the card).
-	buildViewport(characterKey).Parent = card
-
-	-- The chin: a strip at the bottom with "KILLER" over the character name.
+	-- The chin (name strip). Square corners; the content clip rounds the bottom outer corners.
 	local chin = Instance.new("Frame")
 	chin.AnchorPoint = Vector2.new(0, 1)
 	chin.Position = UDim2.fromScale(0, 1)
-	chin.Size = UDim2.new(1, 0, 0, 64)
+	chin.Size = UDim2.new(1, 0, 0, CONFIG.chinHeight)
 	chin.BackgroundColor3 = COLOR.panel
 	chin.BorderSizePixel = 0
-	chin.ZIndex = 3   -- in front of the model, so the model stands "behind" the name strip
-	chin.Parent = card
-	local chinCorner = Instance.new("UICorner")
-	chinCorner.CornerRadius = UDim.new(0, 12)
-	chinCorner.Parent = chin
+	chin.ZIndex = 3
+	chin.Parent = content
 
 	local roleLabel = Instance.new("TextLabel")
 	roleLabel.Size = UDim2.new(1, -36, 0, 14)
 	roleLabel.Position = UDim2.fromOffset(18, 12)
 	roleLabel.BackgroundTransparency = 1
-	roleLabel.Text = "KILLER"
+	roleLabel.Text = isLocked and "COMING SOON" or "KILLER"
 	roleLabel.TextXAlignment = Enum.TextXAlignment.Left
 	roleLabel.TextColor3 = COLOR.bloodBright
 	roleLabel.TextSize = 11
@@ -347,49 +385,115 @@ local function buildCard(characterKey, layoutOrder)
 	roleLabel.Parent = chin
 
 	local nameLabel = Instance.new("TextLabel")
-	nameLabel.Size = UDim2.new(1, -36, 0, 28)
-	nameLabel.Position = UDim2.fromOffset(18, 26)
+	nameLabel.Size = UDim2.new(1, -32, 0, 54)
+	nameLabel.Position = UDim2.fromOffset(18, 28)
 	nameLabel.BackgroundTransparency = 1
-	nameLabel.Text = LABELS[characterKey] or characterKey
+	nameLabel.Text = isLocked and "??????" or (LABELS[characterKey] or characterKey)
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.TextColor3 = COLOR.ink
-	nameLabel.TextSize = 26
+	nameLabel.TextScaled = true   -- fills the taller chin; capped below so long names won't overflow
 	nameLabel.Font = CONFIG.titleFont
 	nameLabel.ZIndex = 3
 	nameLabel.Parent = chin
+	local nameMax = Instance.new("UITextSizeConstraint")
+	nameMax.MaxTextSize = 52
+	nameMax.Parent = nameLabel
 
-	-- Hover: the portrait background turns blood red and the border brightens (per your note that
-	-- hovering a choice makes the background blood red). Skipped once a pick is locked in.
+	-- Portrait contents: the real 3D model, OR (locked card) a centered lock icon.
+	if isLocked then
+		local lock = Instance.new("ImageLabel")
+		lock.AnchorPoint = Vector2.new(0.5, 0.5)
+		lock.Position = UDim2.new(0.5, 0, 0.5, -CONFIG.chinHeight / 2)
+		lock.Size = UDim2.fromOffset(CONFIG.lockSize, CONFIG.lockSize)
+		lock.BackgroundTransparency = 1
+		lock.Image = CONFIG.lockImage
+		lock.ImageColor3 = COLOR.inkDim
+		lock.ZIndex = 2
+		lock.Parent = content
+	else
+		buildViewport(characterKey).Parent = card   -- sibling of `content`, so it can peek above
+	end
+
+	-- A dim overlay over the whole card (greys out the locked card, and the non-chosen cards once a
+	-- pick is made). Child of the card so it covers the 3D model too; sits under the borders.
+	local dim = Instance.new("Frame")
+	dim.Name = "Dim"
+	dim.Size = UDim2.fromScale(1, 1)
+	dim.BackgroundColor3 = COLOR.bgDarkest
+	dim.BackgroundTransparency = isLocked and 0.5 or 1
+	dim.BorderSizePixel = 0
+	dim.ZIndex = 6
+	dim.Parent = card
+	local dimCorner = Instance.new("UICorner")
+	dimCorner.CornerRadius = UDim.new(0, 14)
+	dimCorner.Parent = dim
+
+	-- DOUBLE BORDER: two concentric rounded outlines (outer + a thinner, fainter inner line just
+	-- inside it) on transparent frames ABOVE everything, so the strokes aren't covered.
+	local function makeBorder(inset, radius, thickness, transparency, z)
+		local f = Instance.new("Frame")
+		f.AnchorPoint = Vector2.new(0.5, 0.5)
+		f.Position = UDim2.fromScale(0.5, 0.5)
+		f.Size = UDim2.new(1, -inset * 2, 1, -inset * 2)
+		f.BackgroundTransparency = 1
+		f.ZIndex = z
+		f.Parent = card
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, radius)
+		c.Parent = f
+		local s = Instance.new("UIStroke")
+		s.Thickness = thickness
+		s.Color = COLOR.borderDark
+		s.Transparency = transparency
+		s.Parent = f
+		return s
+	end
+	local strokeOuter = makeBorder(0, 14, 2, 0, 10)
+	local strokeInner = makeBorder(5, 9, 1, 0.35, 11)
+
+	-- The locked card is a static, dimmed "coming soon" -- no hover/click behavior.
+	if isLocked then
+		return
+	end
+
 	local quick = TweenInfo.new(0.12, Enum.EasingStyle.Quad)
 	local isChosen = false
 
+	local function setBorder(color)
+		TweenService:Create(strokeOuter, quick, { Color = color }):Play()
+		TweenService:Create(strokeInner, quick, { Color = color }):Play()
+	end
+
+	-- On hover/select, ONLY the chin + border change -- the striped portrait stays as-is.
+	local function setRed(on)
+		TweenService:Create(chin, quick, { BackgroundColor3 = on and COLOR.blood or COLOR.panel }):Play()
+		setBorder(on and COLOR.bloodBright or COLOR.borderDark)
+		roleLabel.TextColor3 = on and COLOR.black or COLOR.bloodBright
+	end
+
 	card.MouseEnter:Connect(function()
 		if locked or isChosen then return end
-		TweenService:Create(hoverWash, quick, { BackgroundTransparency = 0.1 }):Play()
-		TweenService:Create(stroke, quick, { Color = COLOR.bloodBright }):Play()
+		setRed(true)
 	end)
 	card.MouseLeave:Connect(function()
 		if locked or isChosen then return end
-		TweenService:Create(hoverWash, quick, { BackgroundTransparency = 1 }):Play()
-		TweenService:Create(stroke, quick, { Color = COLOR.borderDark }):Play()
+		setRed(false)
 	end)
 
-	-- Click: lock the screen, fire the choice, and switch THIS card to the chosen look —
-	-- chin fills blood red and "KILLER" goes black (matches the mockup's selected state).
+	-- Click: lock the screen, fire the choice, keep THIS card red, and dim the others.
 	card.MouseButton1Click:Connect(function()
 		if locked then return end
 		locked = true
 		isChosen = true
 		CharacterPicker:FireServer(characterKey)
+		setRed(true)
 
-		TweenService:Create(chin, quick, { BackgroundColor3 = COLOR.blood }):Play()
-		TweenService:Create(stroke, quick, { Color = COLOR.bloodBright }):Play()
-		roleLabel.TextColor3 = COLOR.black
-
-		-- Dim the cards that were NOT chosen so the choice reads clearly.
 		for _, other in ipairs(cardRow:GetChildren()) do
-			if other:IsA("TextButton") and other ~= card then
-				TweenService:Create(other, quick, { BackgroundTransparency = 0.55 }):Play()
+			if other ~= card and other:IsA("TextButton") then
+				local otherDim = other:FindFirstChild("Dim")
+				if otherDim then
+					TweenService:Create(otherDim, quick, { BackgroundTransparency = 0.55 }):Play()
+				end
 			end
 		end
 	end)
@@ -433,14 +537,17 @@ local function open(options)
 	clearCardsAndLoops()
 	locked = false
 
-	-- Size the row to fit however many options the server sent.
-	local count = #options
+	-- Total cards = the server's options + an optional trailing locked "coming soon" slot.
+	local count = #options + (CONFIG.showLockedSlot and 1 or 0)
 	cardRow.Size = UDim2.fromOffset(
 		count * CONFIG.cardWidth + math.max(0, count - 1) * CONFIG.cardGap,
 		CONFIG.cardHeight + CONFIG.avatarPeek + 20)
 
 	for i, characterKey in ipairs(options) do
-		buildCard(characterKey, i)
+		buildCard(characterKey, i, false)
+	end
+	if CONFIG.showLockedSlot then
+		buildCard(nil, #options + 1, true)
 	end
 
 	startCountdown()
