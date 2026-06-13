@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Believe the Truth — Killer Select (mockup)</title>
+
+<!-- A creepy display font for headers + a clean readable sans for everything else.
+     If you're offline, the fallbacks below still look fine. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  /* ----------------------------------------------------------------------
+     TUNABLES — change these first, everything else follows from them.
+     (Same idea as our Constants/tunables in the Lua scripts.)
+  ---------------------------------------------------------------------- */
+  :root {
+    --bg-darkest:   #0a0608;   /* page background, almost black */
+    --bg-panel:     #160d12;   /* the cards */
+    --ink:          #f3e9ec;   /* main text */
+    --ink-dim:      #9a8a90;   /* secondary text */
+    --blood:        #b1242b;   /* the danger / killer accent */
+    --blood-bright: #ff3b41;   /* hover + selected glow */
+    --gold:         #c9a86a;   /* small "rare" accent on names */
+
+    --card-w: 300px;           /* width of one character card */
+    --card-gap: 28px;          /* space between cards */
+    --radius: 14px;            /* corner rounding */
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #1c0f16 0%, transparent 60%),
+      var(--bg-darkest);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;            /* full-screen game feel, no scrollbars */
+  }
+
+  /* faint scanline / grain so it doesn't feel like a flat web page */
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.015) 0 1px, transparent 1px 3px);
+    mix-blend-mode: overlay;
+  }
+
+  /* ----------------------------------------------------------------------
+     TOP BAR — game title (small, left) + the screen's job (center)
+  ---------------------------------------------------------------------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 34px;
+  }
+  .game-title {
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--ink-dim);
+    text-transform: uppercase;
+  }
+  .screen-title {
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-weight: 900;
+    font-size: 46px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-shadow: 0 0 18px rgba(255,59,65,0.35);
+  }
+  .screen-title .accent { color: var(--blood-bright); }
+  .screen-sub {
+    text-align: center;
+    color: var(--blood-bright);
+    letter-spacing: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .topbar .spacer { width: 120px; }   /* balances the game title on the left */
+
+  /* ----------------------------------------------------------------------
+     CARD ROW — the killers sit centered in the middle of the screen
+  ---------------------------------------------------------------------- */
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .select-header { text-align: center; margin-bottom: 120px; }
+  .countdown {
+    margin-top: 4px;
+    text-align: center;
+    color: var(--blood-bright);
+    letter-spacing: 6px;
+    font-size: 18px;
+    font-weight: 400;
+    text-transform: uppercase;
+  }
+  .countdown .clock {
+    color: var(--blood-bright);
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: 3px;
+    margin-left: 6px;
+  }
+  .card-row {
+    display: flex;
+    gap: var(--card-gap);
+    align-items: stretch;
+  }
+
+  /* ----------------------------------------------------------------------
+     ONE CHARACTER CARD
+     - portrait area on top (this is where the 3D ViewportFrame goes in Roblox)
+     - name + role + ability below
+     - selected state = thick ring + lift + glow + a corner check (NOT color alone,
+       so it reads regardless of how you see color)
+  ---------------------------------------------------------------------- */
+  .card {
+    width: var(--card-w);
+    background: linear-gradient(180deg, var(--bg-panel) 0%, #0d070a 100%);
+    border: 2px solid #2a1a20;
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    position: relative;
+    overflow: visible;   /* let the floating avatar peek out the top */
+  }
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: var(--blood);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.6);
+  }
+
+  /* SELECTED look — driven by adding class="card selected" */
+  .card.selected {
+    transform: translateY(-8px) scale(1.02);
+    border-color: var(--blood-bright);
+    box-shadow:
+      0 0 0 3px rgba(255,59,65,0.35),
+      0 18px 40px rgba(0,0,0,0.7),
+      0 0 40px rgba(255,59,65,0.25);
+  }
+  /* CHOSEN card: the chin (info block) fills blood red and "Killer" goes black */
+  .card.selected .info { background: var(--blood); border-top-color: var(--blood-bright); }
+  .card.selected .role { color: #000; }
+
+  /* PORTRAIT — placeholder box. In Roblox this becomes a ViewportFrame
+     rendering the real dressed model with a slow idle spin. */
+  .portrait {
+    height: 320px;
+    position: relative;
+    border-radius: 12px 12px 0 0;   /* match the card's rounded top */
+    background:
+      radial-gradient(120px 120px at 50% 40%, rgba(255,59,65,0.10), transparent 70%),
+      repeating-linear-gradient(45deg, #120a0e 0 14px, #160d12 14px 28px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .portrait .placeholder {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+  .portrait .placeholder .glyph { font-size: 46px; display: block; margin-bottom: 8px; opacity: .5; }
+
+  /* AVATAR stand-in: a floating figure that peeks ABOVE the box top.
+     In Roblox this is the ViewportFrame (made taller than the visible box,
+     transparent, layered over the bezel) rendering the real model. */
+  .avatar {
+    position: absolute;
+    left: 50%;
+    bottom: 28px;
+    width: 96px;
+    transform: translateX(-50%);
+    animation: float 3.2s ease-in-out infinite;
+    filter: drop-shadow(0 18px 22px rgba(0,0,0,0.55));
+    pointer-events: none;
+  }
+  .avatar .head {            /* head — rises above the box top edge */
+    width: 60px; height: 60px;
+    margin: 0 auto 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #6a4a56, #2a1820 75%);
+  }
+  .avatar .body {            /* tall body */
+    width: 96px; height: 300px;
+    border-radius: 46px 46px 22px 22px;
+    background: linear-gradient(180deg, #4a2f3a 0%, #241218 100%);
+  }
+  @keyframes float {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-12px); }
+  }
+
+  /* INFO block under the portrait */
+  .info { padding: 16px 18px; border-top: 1px solid #2a1a20; border-radius: 0 0 12px 12px; }
+  .role {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--blood-bright);
+    font-weight: 800;
+  }
+  .name {
+    font-family: 'Cinzel Decorative', Georgia, serif;
+    font-size: 26px;
+    font-weight: 900;
+    margin: 2px 0 0;
+    color: var(--ink);
+  }
+  .ability {
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--ink-dim);
+  }
+  .ability b { color: var(--gold); font-weight: 600; }
+
+  /* a "locked / coming soon" card uses this — dim + a lock glyph, no hover lift */
+  .card.locked { cursor: default; opacity: .5; }
+  .card.locked:hover { transform: none; border-color: #2a1a20; box-shadow: none; }
+
+</style>
+</head>
+<body>
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="game-title">Believe&nbsp;the&nbsp;Truth</div>
+  </header>
+
+  <!-- CARD ROW -->
+  <main class="stage">
+
+    <!-- title now sits directly above the choices -->
+    <div class="select-header">
+      <div class="screen-title">Choose Your <span class="accent">Yokai</span></div>
+      <div class="countdown">The hunt begins in<span class="clock">0:12</span></div>
+    </div>
+
+    <div class="card-row">
+
+      <!-- GIRL A (shown pre-selected so you can see the chosen state) -->
+      <div class="card selected">
+        <div class="portrait">
+          <div class="avatar"><div class="head"></div><div class="body"></div></div>
+        </div>
+        <div class="info">
+          <div class="role">Killer</div>
+          <div class="name">Girl A</div>
+        </div>
+      </div>
+
+      <!-- ROKUROKUBI -->
+      <div class="card">
+        <div class="portrait">
+          <div class="avatar"><div class="head"></div><div class="body"></div></div>
+        </div>
+        <div class="info">
+          <div class="role">Killer</div>
+          <div class="name">Rokurokubi</div>
+        </div>
+      </div>
+
+      <!-- A LOCKED SLOT — to show how "future killer / skin" reads -->
+      <div class="card locked">
+        <div class="portrait">
+          <div class="placeholder">
+            <span class="glyph">🔒</span>
+            LOCKED<br>coming soon
+          </div>
+        </div>
+        <div class="info">
+          <div class="role">???</div>
+          <div class="name">??????</div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

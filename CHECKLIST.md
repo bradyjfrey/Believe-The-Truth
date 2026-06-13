@@ -17,8 +17,6 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 - [ ] **Borrowed body's arms freeze when the player is the Yokai** (during the StarterCharacter test, Momotaro's arms didn't move as Yokai but did as Warden). Likely the Yokai role applies its own arm pose/ability — expected to disappear once each role uses its own real model. Verify when wiring per-role models.
 
 ## 🔜 Core build (the critical path to "all three characters real")
-- [ ] **Dress Momotaro** (same recipe as GirlA; he also needs a Head added — his rig has none)
-- [ ] **Dress Rokurokubi** (same recipe; her rig is deep-nested + her neck is a separate special piece)
 - [ ] **Wire dressed models into the round spawn** — all three are dressed now, so they can swap in together. Full grounded plan in **`PLAN_dressed_model_spawn.md`** (seam = `spawnPlayerAt`; mapping already exists; skip `CharacterAppearance.apply`; do Momotaro end-to-end first; ~1 focused session).
 - [ ] **Re-rig the 2 companion dogs** (the rig didn't persist) + hand-made walk-cycle animation (daughter's job)
 - [ ] **Momotaro's companion bird (Hawk)** — behavior DONE (`tools/companion-bird.server.luau`): hovers off his right shoulder/above his head and flaps in place (the asset's animation is a baked flight-circle; the script cancels the travel by pinning the body bone). Stored in `ReplicatedStorage.Companions`. STILL TO DO: clone it beside the Momotaro player at spawn (same seam as the dogs) and fine-tune the shoulder offset against the real character.
@@ -34,7 +32,7 @@ The running to-do for the game. Grouped by phase. See `PLAN_character_models.md`
 - [ ] **Killer intros (cinematic):**
   - GirlA — emerges from a computer screen: *"Welcome user, to your demise"* (high-quality scene)
   - Rokurokubi — floats/runs at the victim (shown on the killed player's avatar body), suffocates them with her neck after a few seconds of struggle, then charges
-- [ ] **Music** — pull from Brady's Drive folder (see `reference_music_folder` memory); per-area map themes (Claude's choice/make); Rokurokubi gets a custom theme
+- [ ] **Music for the skin store** — the lobby + in-round chase themes are done (see Done above); the skin store still needs its own track. Pull from Brady's Drive folder (see `reference_music_folder` memory). *(Stretch: per-area map themes, Rokurokubi custom theme.)*
 - [ ] **Character animations:**
   - GirlA — floats while dragging her hatchet with one free hand; the other hand can attack / help support the hatchet
   - Rokurokubi — neck sways slightly, arms folded, slides/levitates around the map hunting players
