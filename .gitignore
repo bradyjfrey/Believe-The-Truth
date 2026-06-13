@@ -25,5 +25,8 @@
 *.flac
 *.m4a
 
+# Local backups folder — kept in the repo dir for convenience, never tracked/pushed.
+/• backups/
+
 # Misc
 .DS_Store
