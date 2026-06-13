@@ -12,14 +12,16 @@ stats, passives, every ability with keybinds/cooldowns/damage — live in `• s
 - [x] Momotaro's companion bird (Hawk) — hovers off his shoulder + flaps (`tools/companion-bird.server.luau`)
 - [x] Lobby + map spawn flow — hang out in the lobby while waiting; teams split to blue (Warden) / red (Yokai) on round start; back to lobby on round end
 - [x] Lobby + in-round music (lobby theme + CODE RED chase theme; chase audio pending Roblox moderation)
+- [x] **Killer character-select picker** — "Choose Your Yokai" screen: Grenze Gotisch title, tiled-stripe cards with live 3D `ViewportFrame` models (slow spin, peek above the box), blood-red hover, double border, countdown, locked "COMING SOON" slot. Runtime-built in `src/StarterPlayer/StarterPlayerScripts/CharacterPickerUI.client.lua`; keeps the existing `CharacterPicker` remote contract. Mockup: `mockups/killer-select.html`. Uploaded assets: stripe tile `119070341954890`, lock icon `127360932839161`. Per-character camera knobs live in the `CAMERA` table.
+- [x] **Dressed models wired into the round spawn** — on round start each player becomes their real model (Momotaro / GirlA / Rokurokubi); all three spawn, move, and animate. Done via a temp `StarterPlayer.StarterCharacter` swap + `LoadCharacter` (so Roblox injects the R6 `Animate` + StarterCharacterScripts), tagged `Dressed=true` so `Bootstrap` skips the recolor. Toggle per character in `RoundService.DRESSED_ENABLED`; lobby stays normal avatars. (`RoundService.spawnPlayerAt`, `Bootstrap.applyCharacterStats`.)
+  - **Model fixes applied (re-run if a re-export drops them):** Rokurokubi's neck `Motor6D`s rebuilt via `tools/rebuild-rokurokubi-neck.luau`; `NeckWave` now waits for the joints to replicate before scanning; Momotaro's root joint renamed `Root Hip`→`RootJoint` and a duplicate costume `Torso` renamed (`tools/fix-momotaro-rig.luau`). These joints/names are invisible in the Explorer unless you expand each part — easy to lose on export.
 
 ## 🐞 Known issues (check later, not blocking)
-- [ ] **Dressed Momotaro couldn't move in the lobby** (test as StarterCharacter). He moved fine *in-round* earlier. Could be: spawning stuck in lobby geometry, controls disabled in the Lobby state, or something about the custom character + lobby spawn. Re-check once dressed models are wired into the real spawn flow.
 - [ ] **Jumping is inconsistent** — per playtest (daughter): only **Girl A can jump, and only a little** (stays inside the map, can't jump out); **Momotaro and Rokurokubi can't jump at all**. Likely per-model rig / `Humanoid.JumpPower`(or `UseJumpPower`)/HipHeight differences on the dressed models. Decide intended behavior per character, then normalize.
-- [ ] **Borrowed body's arms freeze when the player is the Yokai** (during the StarterCharacter test, Momotaro's arms didn't move as Yokai but did as Warden). Likely the Yokai role applies its own arm pose/ability — expected to disappear once each role uses its own real model. Verify when wiring per-role models.
+
+_(Resolved: "dressed Momotaro can't move in lobby" — lobby now spawns normal avatars, dressed only in-round. "Yokai arm freeze" / "Momotaro frozen" — was Momotaro's rig naming (`Root Hip` root joint + duplicate `Torso`), fixed via `tools/fix-momotaro-rig.luau`.)_
 
 ## 🔜 Core build (the critical path to "all three characters real")
-- [ ] **Wire dressed models into the round spawn** — all three are dressed now, so they can swap in together. Full grounded plan in **`PLAN_dressed_model_spawn.md`** (seam = `spawnPlayerAt`; mapping already exists; skip `CharacterAppearance.apply`; do Momotaro end-to-end first; ~1 focused session).
 - [ ] **Momotaro's companions (per spec there are THREE, not 2 dogs):** **Kijiro the pheasant** = the Hawk (passive *Bird's Eye View*, highlights Yokai — behavior built), **Inuta the dog** (*Guard Dog* ability), **Saru the monkey** (*Messy Eater* banana-slip). ⚠️ Checklist used to say "2 dogs" — confirm whether the kids built 2 dogs or dog + monkey. Re-rig the quadruped(s) (rig didn't persist) + walk-cycle animation (daughter's job). Recipe: `RIG QUADRUPED DOGS script` (Desktop → move to `tools/`).
 - [ ] **Momotaro's companion bird (Hawk)** — behavior DONE (`tools/companion-bird.server.luau`): hovers off his right shoulder/above his head and flaps in place (the asset's animation is a baked flight-circle; the script cancels the travel by pinning the body bone). Stored in `ReplicatedStorage.Companions`. STILL TO DO: clone it beside the Momotaro player at spawn (same seam as the dogs) and fine-tune the shoulder offset against the real character.
 - [ ] **Build the Effects** (`GirlASlash`, etc. — currently empty stubs that `EffectsService:Play` calls by name)
@@ -33,7 +35,6 @@ Code already stubs a lot of this: `AbilityService`, `AbilityModule`, `EffectsSer
 - **Rokurokubi** — Yokai, HP 2000, ~10% faster than survivors, free starter. Passive **Hidden Hunger** (stomach-growl audio when she's near). Abilities: **Neck Wrap** `Q` (bind + DoT, button-mash escape) · **Bite** `M1` (bleed, stacks ×3) · **Disguise** `R` (look like a Warden) → **Strangle** `Q` while disguised (choke, disguise drops).
 
 ## 🎨 UI & lobby
-- [ ] **Redesign the "choose your character" picker** — Brady designing the look in `StarterGui`; Claude wires it as a template + dynamic cards (option to show the live 3D models via `ViewportFrame`)
 - [ ] **Lobby whiteboard you can actually "write" on** (kids designed the board; needs draw-on-surface interaction)
 - [ ] *(Way later)* **Skin store** — buy/equip Token & Toastful skins
 

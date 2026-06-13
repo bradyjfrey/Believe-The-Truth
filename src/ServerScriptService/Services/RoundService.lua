@@ -12,6 +12,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -80,12 +81,62 @@ local function markerCFrame(name, fallback)
 	return fallback
 end
 
--- Spawn the player and drop them at `baseCFrame` (a few studs up so they don't
--- clip into the floor), nudged a little so multiple players don't stack.
-local function spawnPlayerAt(player, baseCFrame)
-	player:LoadCharacter()
+-- Dressed models we've wired into the round spawn SO FAR. Flip each to true once it's proven
+-- end-to-end (we're starting with Momotaro). Anything false/missing spawns the normal avatar.
+local DRESSED_ENABLED = {
+	Momotaro   = true,
+	GirlA      = true,
+	Rokurokubi = true,
+}
+
+-- Spawn the player and drop them at `baseCFrame` (a few studs up so they don't clip into the
+-- floor), nudged a little so multiple players don't stack.
+--
+-- If `characterKey` names a dressed model we've enabled, we spawn THAT model. The trick: drop a
+-- tagged copy into StarterPlayer.StarterCharacter and call LoadCharacter, so Roblox still injects
+-- the default (correct, R6) Animate + StarterCharacterScripts + camera/controls/ownership for us --
+-- the things a manual `player.Character = clone` would NOT give. We remove the template right after
+-- so lobby/default spawns stay normal. (See PLAN_dressed_model_spawn.md / the Step-0 homework.)
+local function spawnPlayerAt(player, baseCFrame, characterKey)
+	local models = ReplicatedStorage:FindFirstChild("CharacterModels")
+	local source = characterKey and DRESSED_ENABLED[characterKey] and models and models:FindFirstChild(characterKey)
+
+	if source then
+		local template = source:Clone()
+		template.Name = "StarterCharacter"
+		template:SetAttribute("Dressed", true)   -- Bootstrap skips the placeholder recolor when set
+		local existing = StarterPlayer:FindFirstChild("StarterCharacter")
+		if existing then existing:Destroy() end
+		template.Parent = StarterPlayer
+
+		-- pcall so a bad model can NEVER kill the round loop, and ALWAYS remove the template
+		-- afterward (even on error) so lobby/normal spawns don't inherit a stray StarterCharacter.
+		local ok, err = pcall(function() player:LoadCharacter() end)
+
+		-- IMPORTANT: let Roblox finish injecting the default Animate + StarterCharacterScripts BEFORE
+		-- we remove the template. Destroying it immediately races that injection, and the dressed
+		-- character can spawn with no Animate (frozen arms/legs). Wait for Animate to appear (or 3s).
+		local spawned = player.Character
+		if spawned then spawned:WaitForChild("Animate", 3) end
+
+		local used = StarterPlayer:FindFirstChild("StarterCharacter")
+		if used then used:Destroy() end
+		if not ok then
+			warn(("[RoundService] dressed spawn for %s failed (%s) -- using normal avatar"):format(
+				tostring(characterKey), tostring(err)))
+			player:LoadCharacter()
+		end
+	else
+		player:LoadCharacter()
+	end
+
 	local character = player.Character or player.CharacterAdded:Wait()
-	character:WaitForChild("HumanoidRootPart")
+	-- Don't wait forever: a malformed model could hang the whole round loop here.
+	local root = character:WaitForChild("HumanoidRootPart", 5)
+	if not root then
+		warn(("[RoundService] %s spawned with no HumanoidRootPart (model issue) -- skipping placement"):format(player.Name))
+		return
+	end
 	local ox = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
 	local oz = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
 	character:PivotTo(baseCFrame * CFrame.new(ox, 3, oz))
@@ -271,7 +322,7 @@ function RoundService:_enterRound()
 		player:SetAttribute("Character", playerCharacter[player.UserId])
 		abilityService:SetCharacter(player, playerCharacter[player.UserId])
 		local spawnAt = (playerTeam[player.UserId] == Types.Team.Yokai) and yokaiCFrame or wardenCFrame
-		spawnPlayerAt(player, spawnAt)
+		spawnPlayerAt(player, spawnAt, playerCharacter[player.UserId])
 	end
 
 	-- Spawn placeholder Hotspots so Girl A's Incognito teleport works.

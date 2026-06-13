@@ -117,7 +117,10 @@ local function applyCharacterStats(player, character)
 
     -- Apply appearance FIRST. ApplyDescription resets Health to 100, so we
     -- set MaxHealth/Health after this call.
-    CharacterAppearance.apply(player, characterName)
+    -- Skip it for dressed models -- the real costume IS the model, and the recolor would stomp it.
+    if not character:GetAttribute("Dressed") then
+        CharacterAppearance.apply(player, characterName)
+    end
 
     if characterName == Types.Character.Momotaro then
         humanoid.MaxHealth = Constants.Momotaro.MaxHealth
