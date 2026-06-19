@@ -73,7 +73,7 @@ Constants.Momotaro = {
 
     Katana = {
         Keybind = Enum.KeyCode.Q,
-        CooldownSeconds = 25,
+        CooldownSeconds = 0,  -- no cooldown for now; the kids will pick a real value later (spec was 25)
         WindupSeconds = 0.5,
         DashStuds = 30,
         DashDurationSeconds = 0.25,  -- how long the forward dash lasts

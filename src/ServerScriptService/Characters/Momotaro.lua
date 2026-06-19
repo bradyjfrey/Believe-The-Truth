@@ -168,6 +168,10 @@ Momotaro.Abilities.Katana = function(player, params)
 
     EffectsService:Play("MomotaroKatanaSwing", rootPart.Position)
 
+    -- Tell every client to play his katana swing on his body (his katana is on his LEFT arm).
+    local swingRemote = ReplicatedStorage.Remotes:FindFirstChild("WeaponSwing")
+    if swingRemote then swingRemote:FireAllClients(player, "MomotaroKatana") end
+
     -- Hit detection during the dash. Poll a few times so we catch Yokai who
     -- step into the swing zone mid-dash.
     local alreadyHit = {}

@@ -65,6 +65,7 @@ local NeckWrapMash          = ensureRemote("NeckWrapMash", "RemoteEvent")
 local BreachClose           = ensureRemote("BreachClose", "RemoteEvent")
 local DisguisePickerSelect  = ensureRemote("DisguisePickerSelect", "RemoteEvent")
 local CharacterPicker       = ensureRemote("CharacterPicker", "RemoteEvent")
+local WeaponSwing           = ensureRemote("WeaponSwing", "RemoteEvent")  -- server -> all clients: "this player swung a weapon"
 
 ------------------------------------------------------------------------------
 -- Wire services together

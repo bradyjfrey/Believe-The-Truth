@@ -67,7 +67,37 @@ GirlA.Abilities.Slash = function(attacker, params)
     if not attackerRoot then return end
 
     AbilityModule.startCooldown(attacker, "Slash", G.Slash.CooldownSeconds)
-    EffectsService:Play("GirlASlash", attackerRoot.Position)
+    -- Attach the slash to her weapon arm so it sits ON the hatchet and rides the swing (instead of
+    -- sitting in her body -- her lunge below would otherwise dash her into a world-placed effect).
+    -- TUNE these if it's off: the CFrame is a LOCAL offset from the Right Arm (0,-1.5,0 = down at
+    -- the hand); add a rotation like * CFrame.Angles(0,0,math.rad(90)) if the arc faces sideways;
+    -- Scale shrinks the whole effect.
+    local rightArm = attacker.Character and attacker.Character:FindFirstChild("Right Arm")
+    if rightArm then
+        -- Where the slash sits, as an offset from her Right Arm. TUNE by watching, then re-test.
+        -- POSITION (studs):
+        --   SIDE : + right / - left
+        --   DOWN : - toward the hand (arm is 2 tall, hand ~ -1)
+        --   FWD  : - in FRONT of the blade (more negative = further out front)
+        local SIDE, DOWN, FWD = 0, -1.5, -12
+        -- ORIENTATION (degrees): spin the arc until it faces forward. Try values in steps of 90
+        -- (0 / 90 / 180 / 270) on each axis until it lines up.
+        local ROT_X, ROT_Y, ROT_Z = 240, 0, 90
+        local offset = CFrame.new(SIDE, DOWN, FWD)
+            * CFrame.Angles(math.rad(ROT_X), math.rad(ROT_Y), math.rad(ROT_Z))
+        EffectsService:Play("GirlASlash", nil, {
+            AttachTo = rightArm,
+            CFrame   = offset,
+            Scale    = 0.5,
+        })
+    else
+        EffectsService:Play("GirlASlash", attackerRoot.Position)
+    end
+
+    -- Tell every client to play her two-handed hatchet swing on her body. (Server-side
+    -- joint posing fights the default Animate script; the client does it in RenderStepped.)
+    local swingRemote = ReplicatedStorage.Remotes:FindFirstChild("WeaponSwing")
+    if swingRemote then swingRemote:FireAllClients(attacker, "GirlAHatchet") end
 
     -- Small forward lunge.
     local lookVector = attackerRoot.CFrame.LookVector
