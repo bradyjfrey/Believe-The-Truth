@@ -33,6 +33,7 @@ local DisguiseService = require(ServerScriptService.Services.DisguiseService)
 local Momotaro = require(ServerScriptService.Characters.Momotaro)
 local Rokurokubi = require(ServerScriptService.Characters.Rokurokubi)
 local GirlA = require(ServerScriptService.Characters.GirlA)
+local Otohime = require(ServerScriptService.Characters.Otohime)
 
 ------------------------------------------------------------------------------
 -- Folders + Remotes in ReplicatedStorage
@@ -73,6 +74,7 @@ local characterModules = {
     [Types.Character.Momotaro]    = Momotaro,
     [Types.Character.Rokurokubi]  = Rokurokubi,
     [Types.Character.GirlA]       = GirlA,
+    [Types.Character.Otohime]     = Otohime,
 }
 AbilityService:Init(characterModules, RoundService)
 RoundService:Init({
@@ -137,6 +139,13 @@ local function applyCharacterStats(player, character)
         humanoid.Health = humanoid.MaxHealth
         humanoid.WalkSpeed = Constants.Speed.GirlAWalk
         GirlA:StartPassives(player)
+    elseif characterName == Types.Character.Otohime then
+        -- PLACEHOLDER survivor stats until Otohime's real numbers are built. Mirrors Momotaro so she
+        -- plays like a normal survivor. StartPassives is a no-op stub for now (see Otohime.lua).
+        humanoid.MaxHealth = Constants.Momotaro.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.WardenWalk
+        Otohime:StartPassives(player)
     end
 end
 
@@ -150,6 +159,8 @@ local function watchPlayer(player)
 end
 
 Players.PlayerAdded:Connect(function(player)
+    -- Cap how far they can zoom out so nobody scouts the whole map from a bird's-eye view.
+    player.CameraMaxZoomDistance = Constants.Camera.MaxZoomDistance
     watchPlayer(player)
     -- Give joiners a body in the lobby right away (otherwise they'd sit bodiless
     -- on a sky-view camera until the next round transition).

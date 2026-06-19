@@ -161,6 +161,24 @@ local function ownsCharacter(player, characterName)
 	return true
 end
 
+-- Build the list of characters a player may choose from for their team. Only the ones they own show
+-- up; if somehow none do, we fall back to the team's free starter so the round still starts.
+local function yokaiOptionsFor(player)
+	local opts = {}
+	if ownsCharacter(player, Types.Character.Rokurokubi) then table.insert(opts, Types.Character.Rokurokubi) end
+	if ownsCharacter(player, Types.Character.GirlA) then table.insert(opts, Types.Character.GirlA) end
+	if #opts == 0 then table.insert(opts, Types.Character.Rokurokubi) end
+	return opts
+end
+
+local function survivorOptionsFor(player)
+	local opts = {}
+	if ownsCharacter(player, Types.Character.Momotaro) then table.insert(opts, Types.Character.Momotaro) end
+	if ownsCharacter(player, Types.Character.Otohime) then table.insert(opts, Types.Character.Otohime) end
+	if #opts == 0 then table.insert(opts, Types.Character.Momotaro) end
+	return opts
+end
+
 function RoundService:Init(deps)
 	abilityService = deps.AbilityService
 	disguiseService = deps.DisguiseService
@@ -280,44 +298,48 @@ function RoundService:_enterRound()
 		return
 	end
 
-	-- Pick one random Yokai player.
+	-- Pick one random Yokai player; everyone else is a Warden (survivor).
 	local yokaiPlayer = players[rng:NextInteger(1, #players)]
 
-	-- Build the list of Yokai characters this player owns.
-	local yokaiOptions = {}
-	if ownsCharacter(yokaiPlayer, Types.Character.Rokurokubi) then
-		table.insert(yokaiOptions, Types.Character.Rokurokubi)
-	end
-	if ownsCharacter(yokaiPlayer, Types.Character.GirlA) then
-		table.insert(yokaiOptions, Types.Character.GirlA)
-	end
-	if #yokaiOptions == 0 then
-		warn("[RoundService] picked yokai player owns no Yokai characters — falling back to Rokurokubi")
-		table.insert(yokaiOptions, Types.Character.Rokurokubi)
+	-- Let every player choose their character. We run the picks CONCURRENTLY (each in its own thread)
+	-- so the Yokai and all the survivors choose at the same time instead of waiting in line. Each pick
+	-- is capped at ~10s inside _askPlayerToPick; we then wait for everyone (with a safety ceiling) so
+	-- nobody spawns before their choice is in.
+	local pending = #players
+	for _, player in ipairs(players) do
+		task.spawn(function()
+			local team = (player == yokaiPlayer) and Types.Team.Yokai or Types.Team.Warden
+			local options = (team == Types.Team.Yokai) and yokaiOptionsFor(player) or survivorOptionsFor(player)
+			playerTeam[player.UserId] = team
+			if #options == 1 then
+				playerCharacter[player.UserId] = options[1]   -- only one choice: skip the screen
+			else
+				playerCharacter[player.UserId] = self:_askPlayerToPick(player, options, team)
+			end
+			pending -= 1
+		end)
 	end
 
-	local yokaiCharacter
-	if #yokaiOptions == 1 then
-		yokaiCharacter = yokaiOptions[1]
-	else
-		-- Ask the picked player to choose. If they don't pick in time, default
-		-- to a random one so the round still starts.
-		yokaiCharacter = self:_askPlayerToPick(yokaiPlayer, yokaiOptions)
+	-- Wait for all picks to land. The ceiling is a touch above the 10s pick timeout so a slow/stuck
+	-- client can't hang the round forever.
+	local waitStart = tick()
+	while pending > 0 and (tick() - waitStart) < 15 do
+		task.wait(0.1)
 	end
-	print(string.format("[RoundService] Yokai options: [%s], chosen -> %s",
-		table.concat(yokaiOptions, ", "), yokaiCharacter))
+
+	print(string.format("[RoundService] Yokai = %s -> %s", yokaiPlayer.Name,
+		tostring(playerCharacter[yokaiPlayer.UserId])))
 
 	-- Assign teams + characters and respawn (fresh HP) at the team's spot in Map 1.
 	-- The killer (Yokai) starts in the red area, survivors (Wardens) in the blue area.
 	local wardenCFrame = markerCFrame("WardenSpawn", CFrame.new(0, 50, 0))
 	local yokaiCFrame = markerCFrame("YokaiSpawn", CFrame.new(40, 50, 0))
 	for _, player in ipairs(players) do
-		if player == yokaiPlayer then
-			playerTeam[player.UserId] = Types.Team.Yokai
-			playerCharacter[player.UserId] = yokaiCharacter
-		else
-			playerTeam[player.UserId] = Types.Team.Warden
-			playerCharacter[player.UserId] = Types.Character.Momotaro
+		-- Safety net: if a pick thread didn't finish (e.g. the player left), fall back sensibly.
+		if not playerCharacter[player.UserId] then
+			playerTeam[player.UserId] = (player == yokaiPlayer) and Types.Team.Yokai or Types.Team.Warden
+			playerCharacter[player.UserId] = (player == yokaiPlayer)
+				and Types.Character.Rokurokubi or Types.Character.Momotaro
 		end
 		player:SetAttribute("Team", playerTeam[player.UserId])
 		player:SetAttribute("Character", playerCharacter[player.UserId])
@@ -340,15 +362,16 @@ end
 -- Asks the player to pick from `options`. Shows them a UI via the
 -- CharacterPicker remote, waits up to PickTimeoutSeconds for them to choose,
 -- and falls back to random if they don't.
-function RoundService:_askPlayerToPick(player, options)
+function RoundService:_askPlayerToPick(player, options, role)
 	local remotes = ReplicatedStorage:FindFirstChild("Remotes")
 	local picker = remotes and remotes:FindFirstChild("CharacterPicker")
 	if not picker then
 		return options[rng:NextInteger(1, #options)]
 	end
 
-	-- Tell the client to open the picker with these options.
-	picker:FireClient(player, options)
+	-- Tell the client to open the picker with these options. `role` ("Yokai"/"Warden") themes the
+	-- screen red for killers or light-blue for survivors.
+	picker:FireClient(player, options, role)
 
 	-- Listen for their pick.
 	local chosen = nil

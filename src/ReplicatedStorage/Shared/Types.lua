@@ -11,6 +11,7 @@ Types.Team = {
 
 Types.Character = {
     Momotaro = "Momotaro",
+    Otohime = "Otohime",
     Rokurokubi = "Rokurokubi",
     GirlA = "GirlA",
 }
@@ -18,6 +19,7 @@ Types.Character = {
 -- Which team each character belongs to.
 Types.CharacterTeam = {
     Momotaro = Types.Team.Warden,
+    Otohime = Types.Team.Warden,
     Rokurokubi = Types.Team.Yokai,
     GirlA = Types.Team.Yokai,
 }

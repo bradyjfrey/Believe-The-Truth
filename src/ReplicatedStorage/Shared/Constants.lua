@@ -20,6 +20,16 @@ Constants.Round = {
 }
 
 ------------------------------------------------------------------------------
+-- Camera
+------------------------------------------------------------------------------
+Constants.Camera = {
+    -- How far players can zoom the third-person camera OUT, in studs. Capped so nobody can pull
+    -- back to a bird's-eye view and spot other players across the map. (Roblox default is 128.)
+    -- Our characters are ~2.4x normal size, so this is a little roomier than a normal-rig game.
+    MaxZoomDistance = 28,
+}
+
+------------------------------------------------------------------------------
 -- Movement speeds (Roblox default WalkSpeed is 16)
 ------------------------------------------------------------------------------
 Constants.Speed = {

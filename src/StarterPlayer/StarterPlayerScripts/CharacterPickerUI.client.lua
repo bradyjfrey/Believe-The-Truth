@@ -1,16 +1,18 @@
 -- CharacterPickerUI.client.lua
--- The "Choose Your Yokai" killer-select screen.
+-- The character-select screen. ONE screen serves both roles -- it themes itself red for the Yokai
+-- (killer) pick and light-blue for the Warden (survivor) pick, based on what the server tells it.
 --
 -- HOW IT TALKS TO THE SERVER (do not change this contract):
---   * Server fires Remotes.CharacterPicker with a LIST of character keys -> we show a card per key.
+--   * Server fires Remotes.CharacterPicker with a LIST of character keys + a role ("Yokai"/"Warden")
+--     -> we theme the screen and show a card per key.
 --   * Player clicks a card -> we fire the same remote back with that key, then lock the screen.
 --   * Server fires the remote with `nil` -> we close (the round is starting).
 -- The server gives the player up to 10 seconds, then auto-picks. Our on-screen clock mirrors that.
 --
--- The look matches mockups/killer-select.html: a dark full-screen panel, "Choose Your YOKAI" with a
--- red countdown under it, and one card per killer. Each card has a slowly-spinning 3D model of the
--- real costume that peeks up above the box, the word "KILLER" over the name, a blood-red hover, and a
--- chosen state where the card's chin (the name strip) fills blood red.
+-- The look matches mockups/killer-select.html: a dark full-screen panel, "Choose Your YOKAI/WARDEN"
+-- with a countdown under it, and one card per character. Each card has a slowly-spinning 3D model of
+-- the real costume that peeks up above the box, the role word over the name, an accent hover, and a
+-- chosen state where the card's chin (the name strip) fills with the accent color.
 
 local Players          = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -81,12 +83,39 @@ local COLOR = {
 	blood       = Color3.fromRGB(177, 36, 43),  -- the danger / killer accent
 	bloodBright = Color3.fromRGB(255, 59, 65),  -- hover + chosen glow
 	borderDark  = Color3.fromRGB(120, 60, 68),  -- resting card border (light enough to actually see)
-	black       = Color3.fromRGB(0, 0, 0),       -- "KILLER" text on the chosen red chin
+	black       = Color3.fromRGB(0, 0, 0),       -- role word on the chosen (filled) chin
 }
+
+-- Two looks for the SAME screen. The server tells us which role is being picked; everything tinted
+-- by the theme's accent follows. Yokai = the original blood red; Warden = light blue. The wording
+-- changes too (YOKAI/KILLER vs WARDEN/SURVIVOR), so the two screens read differently even at a glance.
+local THEMES = {
+	Yokai = {
+		titleWord    = "YOKAI",
+		titleHex     = "#ff3b41",
+		roleWord     = "KILLER",
+		clockLead    = "THE HUNT BEGINS IN",
+		accent       = COLOR.blood,                    -- chin fill on hover/select
+		accentBright = COLOR.bloodBright,              -- role word + countdown + bright border
+		border       = COLOR.borderDark,               -- resting card border
+	},
+	Warden = {
+		titleWord    = "WARDEN",
+		titleHex     = "#7cc0ff",
+		roleWord     = "SURVIVOR",
+		clockLead    = "PROTECT THE TOWN IN",
+		accent       = Color3.fromRGB(46, 120, 190),   -- light blue
+		accentBright = Color3.fromRGB(124, 192, 255),  -- bright light blue
+		border       = Color3.fromRGB(54, 92, 130),    -- bluish resting border
+	},
+}
+-- The theme in force for the screen that's currently open. open() sets this before building cards.
+local activeTheme = THEMES.Yokai
 
 -- Display names per character key (the key "GirlA" should read "Girl A").
 local LABELS = {
 	Momotaro   = "Momotaro",
+	Otohime    = "Otohime",
 	Rokurokubi = "Rokurokubi",
 	GirlA      = "Girl A",
 }
@@ -94,12 +123,15 @@ local LABELS = {
 -- Per-character framing tweaks on top of the automatic fit.
 --   zoom: >1 = smaller/further, <1 = bigger/closer.
 --   drop: studs to shift the model DOWN in the box (raises the camera's look point).
+--   face: degrees to turn the model so its FRONT points at the camera (some models were built
+--         facing the other way). 180 = spin it halfway around.
 local CAMERA = {
 	GirlA      = { zoom = 1.15, drop = 0 },    -- a touch smaller
 	Rokurokubi = { zoom = 0.7,  drop = 0.8 },  -- bigger, and nudged down
 	Momotaro   = { zoom = 1.0,  drop = 0 },
+	Otohime    = { zoom = 1.0,  drop = 0, face = 180 },  -- built facing away; turn her to face us
 }
-local DEFAULT_CAM = { zoom = 1.0, drop = 0 }
+local DEFAULT_CAM = { zoom = 1.0, drop = 0, face = 0 }
 
 ----------------------------------------------------------------------------------------------------
 -- Build the parts of the screen that never change (backdrop, title, countdown).
@@ -205,6 +237,16 @@ rowLayout.Padding = UDim.new(0, CONFIG.cardGap)
 rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
 rowLayout.Parent = cardRow
 
+-- Re-skin the always-on parts (title text/color, countdown color, top glow) for the given role.
+-- Cards read `activeTheme` directly when they're built, so this must run before we build them.
+local function applyTheme(role)
+	activeTheme = THEMES[role] or THEMES.Yokai
+	titleLabel.Text = string.format('CHOOSE YOUR <font color="%s">%s</font>',
+		activeTheme.titleHex, activeTheme.titleWord)
+	countdownLabel.TextColor3 = activeTheme.accentBright
+	topGlow.BackgroundColor3 = activeTheme.accent
+end
+
 ----------------------------------------------------------------------------------------------------
 -- Bookkeeping so we can tidy up every connection when the screen closes (no leaks).
 ----------------------------------------------------------------------------------------------------
@@ -308,8 +350,9 @@ local function buildViewport(characterKey)
 	camera.Parent = viewport
 	viewport.CurrentCamera = camera
 
-	-- Slow turntable spin around the model's own vertical axis.
-	local basePivot = model:GetPivot()
+	-- Slow turntable spin around the model's own vertical axis. We first turn the model by `face` so
+	-- its front points at the camera (some models were built facing away), then spin from there.
+	local basePivot = model:GetPivot() * CFrame.Angles(0, math.rad(camCfg.face or 0), 0)
 	local angle = 0
 	track(RunService.RenderStepped:Connect(function(dt)
 		angle += dt * CONFIG.spinSpeed
@@ -376,9 +419,9 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 	roleLabel.Size = UDim2.new(1, -36, 0, 14)
 	roleLabel.Position = UDim2.fromOffset(18, 12)
 	roleLabel.BackgroundTransparency = 1
-	roleLabel.Text = isLocked and "COMING SOON" or "KILLER"
+	roleLabel.Text = isLocked and "COMING SOON" or activeTheme.roleWord
 	roleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	roleLabel.TextColor3 = COLOR.bloodBright
+	roleLabel.TextColor3 = activeTheme.accentBright
 	roleLabel.TextSize = 11
 	roleLabel.Font = CONFIG.bodyFont
 	roleLabel.ZIndex = 3
@@ -443,7 +486,7 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 		c.Parent = f
 		local s = Instance.new("UIStroke")
 		s.Thickness = thickness
-		s.Color = COLOR.borderDark
+		s.Color = activeTheme.border
 		s.Transparency = transparency
 		s.Parent = f
 		return s
@@ -464,29 +507,30 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 		TweenService:Create(strokeInner, quick, { Color = color }):Play()
 	end
 
-	-- On hover/select, ONLY the chin + border change -- the striped portrait stays as-is.
-	local function setRed(on)
-		TweenService:Create(chin, quick, { BackgroundColor3 = on and COLOR.blood or COLOR.panel }):Play()
-		setBorder(on and COLOR.bloodBright or COLOR.borderDark)
-		roleLabel.TextColor3 = on and COLOR.black or COLOR.bloodBright
+	-- On hover/select, ONLY the chin + border change to the theme accent -- the striped portrait
+	-- stays as-is. (Red for Yokai, light blue for Wardens.)
+	local function setAccent(on)
+		TweenService:Create(chin, quick, { BackgroundColor3 = on and activeTheme.accent or COLOR.panel }):Play()
+		setBorder(on and activeTheme.accentBright or activeTheme.border)
+		roleLabel.TextColor3 = on and COLOR.black or activeTheme.accentBright
 	end
 
 	card.MouseEnter:Connect(function()
 		if locked or isChosen then return end
-		setRed(true)
+		setAccent(true)
 	end)
 	card.MouseLeave:Connect(function()
 		if locked or isChosen then return end
-		setRed(false)
+		setAccent(false)
 	end)
 
-	-- Click: lock the screen, fire the choice, keep THIS card red, and dim the others.
+	-- Click: lock the screen, fire the choice, keep THIS card highlighted, and dim the others.
 	card.MouseButton1Click:Connect(function()
 		if locked then return end
 		locked = true
 		isChosen = true
 		CharacterPicker:FireServer(characterKey)
-		setRed(true)
+		setAccent(true)
 
 		for _, other in ipairs(cardRow:GetChildren()) do
 			if other ~= card and other:IsA("TextButton") then
@@ -510,9 +554,10 @@ local function formatClock(seconds)
 end
 
 local function setCountdownText(seconds)
-	-- Whole line is red; the clock is bold + bigger so it pops (matches the mockup).
+	-- Whole line is the accent color; the clock is bold + bigger so it pops (matches the mockup).
+	-- The lead-in wording is themed: "THE HUNT BEGINS IN" for Yokai, "PROTECT THE TOWN IN" for Wardens.
 	countdownLabel.Text = string.format(
-		'THE HUNT BEGINS IN <font size="28"><b>%s</b></font>', formatClock(seconds))
+		'%s <font size="28"><b>%s</b></font>', activeTheme.clockLead, formatClock(seconds))
 end
 
 local function startCountdown()
@@ -533,9 +578,12 @@ end
 -- Open / close, and the remote handler.
 ----------------------------------------------------------------------------------------------------
 
-local function open(options)
+local function open(options, role)
 	clearCardsAndLoops()
 	locked = false
+
+	-- Theme the screen for this role BEFORE building cards (cards read activeTheme as they're built).
+	applyTheme(role)
 
 	-- Total cards = the server's options + an optional trailing locked "coming soon" slot.
 	local count = #options + (CONFIG.showLockedSlot and 1 or 0)
@@ -559,10 +607,10 @@ local function close()
 	clearCardsAndLoops()
 end
 
-CharacterPicker.OnClientEvent:Connect(function(optionsOrNil)
+CharacterPicker.OnClientEvent:Connect(function(optionsOrNil, role)
 	if optionsOrNil == nil then
 		close()
 	elseif type(optionsOrNil) == "table" then
-		open(optionsOrNil)
+		open(optionsOrNil, role)
 	end
 end)
