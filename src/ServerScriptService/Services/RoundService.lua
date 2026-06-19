@@ -87,6 +87,7 @@ local DRESSED_ENABLED = {
 	Momotaro   = true,
 	GirlA      = true,
 	Rokurokubi = true,
+	Otohime    = true,   -- 2nd survivor; model lives in CharacterModels. Reachable once the survivor picker assigns her.
 }
 
 -- Spawn the player and drop them at `baseCFrame` (a few studs up so they don't clip into the
