@@ -443,39 +443,24 @@ function Momotaro:StartPassives(player)
     local character = player.Character
     if not rootPart or not character then return end
 
-    -- 1. Spawn Kijiro near Momotaro and have him track Momotaro's position
-    --    every Heartbeat (parented to the character so he dies with him).
-    local kijiroSpawnPos = rootPart.Position + M.BirdsEyeView.FollowOffset
-    local kijiro = spawnCompanion(
-        "Kijiro",
-        M.BirdsEyeView.KijiroAssetId,
-        Color3.fromRGB(180, 60, 60),
-        Vector3.new(1, 0.7, 1.5),
-        kijiroSpawnPos,
-        character
-    )
-
-    local kijiroAnchor = companionAnchor(kijiro)
-    if kijiroAnchor then
-        kijiroAnchor.Anchored = true
-        kijiroAnchor.CanCollide = false
+    -- 1. Spawn Momotaro's Hawk (Kijiro) beside him. The "Hawk" model in ReplicatedStorage.Companions
+    --    carries its OWN behavior script (flaps + rides beside a target + cancels the baked flight
+    --    circle), so we just clone it and hand it the character to follow via a "FollowTarget" value.
+    --    We deliberately do NOT move it from here -- two controllers would fight every frame. It's
+    --    parented under the character so it's cleaned up automatically when Momotaro despawns.
+    --    (Shoulder offset / facing are tuned at the top of the Hawk's own script, not here.)
+    local companions = ReplicatedStorage:FindFirstChild("Companions")
+    local hawkTemplate = companions and companions:FindFirstChild("Hawk")
+    if hawkTemplate then
+        local hawk = hawkTemplate:Clone()
+        local follow = Instance.new("ObjectValue")
+        follow.Name = "FollowTarget"
+        follow.Value = character
+        follow.Parent = hawk
+        hawk.Parent = character
+    else
+        warn("[Momotaro] No 'Hawk' model in ReplicatedStorage.Companions -- skipping companion bird.")
     end
-
-    task.spawn(function()
-        while kijiro.Parent and player:GetAttribute("Character") == Types.Character.Momotaro do
-            local currentRoot = getRootPart(player)
-            if currentRoot and kijiroAnchor then
-                local target = currentRoot.CFrame * CFrame.new(M.BirdsEyeView.FollowOffset)
-                if kijiro:IsA("Model") then
-                    kijiro:PivotTo(target)
-                else
-                    kijiroAnchor.CFrame = target
-                end
-            end
-            RunService.Heartbeat:Wait()
-        end
-        if kijiro and kijiro.Parent then kijiro:Destroy() end
-    end)
 
     -- 2. The actual Bird's Eye View: highlight Yokai every IntervalSeconds.
     task.spawn(function()

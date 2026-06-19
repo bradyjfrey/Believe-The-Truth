@@ -12,8 +12,10 @@
 -- body in a big circle. We keep the flapping but CANCEL the travel by pinning the body bone to the
 -- spot we want each frame. So the wings move, but the bird stays put beside Momotaro.
 --
--- For now it hovers next to its OWN starting spot (the live Momotaro isn't in the world yet). Once
--- we wire the dressed-model spawn, it'll find the Momotaro player and ride along beside him.
+-- WHO IT FOLLOWS: Momotaro's passive drops an ObjectValue named "FollowTarget" inside this model,
+-- pointing at the live player's character -- we ride beside that. If there's no FollowTarget (e.g.
+-- you're testing the bird on its own in Studio), it falls back to finding a Model/Part named
+-- TARGET_NAME, and if that's missing too it just hovers beside its own starting spot.
 
 local RunService = game:GetService("RunService")
 
@@ -24,8 +26,10 @@ local FLAP_ANIM_ID   = 6409102589  -- the wing-flap (flight-path) animation that
 local TARGET_NAME    = "Momotaro"  -- who to ride beside (a Model/Part by this name); else its start spot
 local PIN_BONE       = "Body"      -- the bone we hold in place to cancel the flight travel. If it still
                                    -- drifts in a circle, try "Root" instead.
-local RIGHT_OFFSET   = 2.5         -- studs to his right (off the right shoulder). Negative = his left.
-local UP_OFFSET      = 4           -- studs up (above his head)
+-- NOTE: these are ABSOLUTE studs. Momotaro is a big (~2.4x) character, so the numbers are larger
+-- than a normal rig would need -- they put the bird above his head and out past his right shoulder.
+local RIGHT_OFFSET   = 6           -- studs to his right (off the right shoulder). Negative = his left.
+local UP_OFFSET      = 10          -- studs up (well above his head so it flies free, not on the shoulder)
 local FORWARD_OFFSET = 0           -- studs in front of him. Negative = behind him.
 local BOB_HEIGHT     = 0.4         -- gentle up/down float so it feels alive, in studs
 local BOB_SPEED      = 1.5         -- up/down bobs per second
@@ -42,7 +46,8 @@ if not primary then warn("[Bird] No BasePart found in the bird model.") return e
 bird.PrimaryPart = primary
 
 for _, d in ipairs(bird:GetDescendants()) do
-	if d:IsA("BasePart") then d.Anchored = true end
+	-- Anchored (we move it by code) and non-colliding (so Momotaro can't bump into his own bird).
+	if d:IsA("BasePart") then d.Anchored = true d.CanCollide = false end
 end
 
 -- The bone we'll pin in place to cancel the flight-path travel.
@@ -66,6 +71,15 @@ end
 ------------------------------------------------------------------------------
 local startCFrame = primary.CFrame
 local function targetCFrame()
+	-- Preferred: ride beside whoever the spawner pointed us at (Momotaro's passive sets this to the
+	-- live player character). Read it each frame so it works even if it's set a moment after we start.
+	local follow = bird:FindFirstChild("FollowTarget")
+	if follow and follow.Value then
+		local t = follow.Value
+		if t:IsA("Model") then return t:GetPivot() end
+		if t:IsA("BasePart") then return t.CFrame end
+	end
+	-- Fallback: find a Model/Part named TARGET_NAME (handy for standalone Studio testing).
 	if TARGET_NAME ~= "" then
 		local t = workspace:FindFirstChild(TARGET_NAME, true)
 		if t and t:IsA("Model") then return t:GetPivot() end
