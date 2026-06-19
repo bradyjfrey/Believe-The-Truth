@@ -457,7 +457,22 @@ function Momotaro:StartPassives(player)
         follow.Name = "FollowTarget"
         follow.Value = character
         follow.Parent = hawk
-        hawk.Parent = character
+        -- Parent to Workspace, NOT under the character. An ANCHORED part living inside the character
+        -- model stops the Humanoid from jumping -- that's why only Momotaro (the one with the Hawk)
+        -- couldn't jump. The client follower finds the bird by its tag wherever it lives, so this is
+        -- purely about keeping the anchored bird out of his rig.
+        hawk.Parent = workspace
+
+        -- Since it's no longer a child of the character, clean it up ourselves when he dies or the
+        -- round swaps his character out (otherwise dead Hawks would pile up in Workspace).
+        local function cleanupHawk()
+            if hawk then hawk:Destroy() hawk = nil end
+        end
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then humanoid.Died:Connect(cleanupHawk) end
+        character.AncestryChanged:Connect(function()
+            if not character:IsDescendantOf(game) then cleanupHawk() end
+        end)
     else
         warn("[Momotaro] No 'Hawk' model in ReplicatedStorage.Companions -- skipping companion bird.")
     end
