@@ -147,6 +147,19 @@ local function applyCharacterStats(player, character)
         humanoid.WalkSpeed = Constants.Speed.WardenWalk
         Otohime:StartPassives(player)
     end
+
+    -- Normalize jumping. The dressed rigs came in inconsistent (some with jumping disabled or near-zero
+    -- JumpPower, some on UseJumpPower=false), so only Girl A could jump. We force a known state at spawn.
+    -- Per-character override wins; 0 means jumping is fully OFF (Rokurokubi floats, so she never jumps).
+    local jumpPower = (Constants.Jump.PerCharacter and Constants.Jump.PerCharacter[characterName]) or Constants.Jump.Power
+    if jumpPower > 0 then
+        humanoid.UseJumpPower = true
+        humanoid.JumpPower = jumpPower
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+    else
+        humanoid.JumpPower = 0
+        humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+    end
 end
 
 local function watchPlayer(player)

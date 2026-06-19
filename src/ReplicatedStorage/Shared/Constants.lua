@@ -30,6 +30,23 @@ Constants.Camera = {
 }
 
 ------------------------------------------------------------------------------
+-- Jumping
+------------------------------------------------------------------------------
+Constants.Jump = {
+    -- Default jump for characters, forced on at spawn. The dressed rigs came in inconsistent (some
+    -- with jumping disabled or near-zero, and the big ~2.4x bodies need it set explicitly), so only
+    -- Girl A could jump before. Kept modest ON PURPOSE: a small hop that can't clear the map walls.
+    -- Raise carefully -- too high and players can jump out of the map. (Roblox default 50.)
+    Power = 50,
+
+    -- Per-character overrides. 0 = jumping fully disabled for that character.
+    -- Rokurokubi FLOATS, so she never jumps.
+    PerCharacter = {
+        Rokurokubi = 0,
+    },
+}
+
+------------------------------------------------------------------------------
 -- Movement speeds (Roblox default WalkSpeed is 16)
 ------------------------------------------------------------------------------
 Constants.Speed = {
