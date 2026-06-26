@@ -66,6 +66,18 @@ Constants.Speed = {
 }
 
 ------------------------------------------------------------------------------
+-- STAMINA (for sprinting -- hold Shift). Drains while you run, refills when you don't.
+-- When it hits 0 you drop back to walk until it recovers a bit. Tune freely.
+------------------------------------------------------------------------------
+Constants.Stamina = {
+    Max = 100,
+    DrainPerSecond = 25,             -- ~4 seconds of sprint from full
+    RegenPerSecond = 18,             -- ~5.5 seconds to refill
+    RegenDelaySeconds = 0.8,         -- short pause after sprinting before it starts refilling
+    MinToSprint = 15,                -- once drained, must recover this much before you can run again
+}
+
+------------------------------------------------------------------------------
 -- MOMOTARO (Warden, Support + Stunner)
 ------------------------------------------------------------------------------
 Constants.Momotaro = {
@@ -216,6 +228,38 @@ Constants.GirlA = {
     Hotspots = {
         Count = 4,                   -- how many placeholder hotspots to spawn at round start
         DeactivationSeconds = 30,    -- how long a hotspot stays off after a Warden's task
+    },
+}
+
+------------------------------------------------------------------------------
+-- OTOHIME (Warden, Support / Medic)
+-- 2nd survivor. Heals teammates and pelts Yokai with a slow "Dark Moon" projectile
+-- (inspired by Elden Ring's Ranni's Dark Moon -- a slow, dramatic drifting moon).
+-- NOTE: these numbers are NOT from the spec doc (she was never written up) -- they're sensible
+-- starting values. Tune freely; the kids can set her real HP / numbers later.
+------------------------------------------------------------------------------
+Constants.Otohime = {
+    MaxHealth = 110,                 -- placeholder, same as Momotaro for now
+
+    HealingPulse = {
+        Keybind = Enum.KeyCode.E,
+        CooldownSeconds = 12,
+        HealAmount = 20,             -- HP restored to each nearby ally
+        RadiusStuds = 20,            -- how far the heal reaches (gameplay, not the visual size)
+        ForwardStuds = 4,            -- push the orb VISUAL this far in front of her (so it's not on her body)
+        -- Heals other Wardens in range, NOT Otohime herself (she plays as a team medic).
+    },
+
+    DarkMoon = {
+        Keybind = Enum.KeyCode.Q,
+        CooldownSeconds = 8,
+        Damage = 25,                 -- to the first Yokai the moon touches
+        RangeStuds = 70,             -- how far the moon drifts before it fades
+        TravelSeconds = 3,           -- slow, dramatic drift (the Ranni's Dark Moon feel)
+        HitRadius = 14,              -- how close the moon must get to a Yokai to hit (match the visual size)
+        MoonScale = 1,               -- shrink/grow the moon visual if the template is too big/small
+        StartForwardStuds = 3,       -- how far in front of her the moon conjures
+        StartUpStuds = 2,            -- how high above her the moon conjures
     },
 }
 

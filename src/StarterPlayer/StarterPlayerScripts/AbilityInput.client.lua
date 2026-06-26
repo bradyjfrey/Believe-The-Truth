@@ -40,6 +40,10 @@ local BINDINGS = {
 		{Action = "GirlAStrayBlade",   Ability = "StrayBlade",       Key = Enum.KeyCode.E,                  Label = "Blade", Hold = true},
 		{Action = "GirlAIncognito",    Ability = "IncognitoMode",    Key = Enum.KeyCode.R,                  Label = "Hide"},
 	},
+	Otohime = {
+		{Action = "OtohimeHealingPulse", Ability = "HealingPulse", Key = Enum.KeyCode.E, Label = "Heal"},
+		{Action = "OtohimeDarkMoon",     Ability = "DarkMoon",     Key = Enum.KeyCode.Q, Label = "Dark Moon"},
+	},
 }
 
 local currentActions = {}

@@ -1,0 +1,15 @@
+-- Health  (a Script named exactly "Health", living in StarterCharacterScripts)
+--
+-- This script exists ONLY to TURN OFF Roblox's built-in health regeneration.
+--
+-- Roblox automatically heals every character a little over time, using an internal script named
+-- "Health". StarterCharacterScripts lets us OVERWRITE a default character script by giving it the
+-- same name -- so this empty "Health" replaces the regen with nothing.
+--
+-- Why we want that: this is a horror PvP game with a healer (Otohime) and Momotaro's dango. If HP
+-- silently regenerates on its own, healing abilities are pointless and damage doesn't stick. With
+-- this, the ONLY way to get HP back is a real heal.
+--
+-- (If we ever want a slow natural regen, we'd write it HERE instead of leaving it empty.)
+
+-- intentionally empty: no regeneration.

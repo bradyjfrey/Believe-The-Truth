@@ -142,17 +142,33 @@ function EffectsService:Play(effectName, position, extras)
 		local offset = extras.CFrame or CFrame.new()
 		makeRideable(container)
 		container:PivotTo(extras.AttachTo.CFrame * offset)
+		-- Weld every loose part of the effect to the anchor so the whole thing moves as one piece
+		-- (templates that are a Folder of un-welded parts would otherwise leave bits behind).
+		for _, d in ipairs(container:GetDescendants()) do
+			if d:IsA("BasePart") and d ~= anchor then
+				local w = Instance.new("WeldConstraint")
+				w.Part0 = anchor
+				w.Part1 = d
+				w.Parent = anchor
+			end
+		end
+		-- Then weld the anchor to the part we're riding.
 		local weld = Instance.new("WeldConstraint")
 		weld.Part0 = extras.AttachTo
 		weld.Part1 = anchor
 		weld.Parent = anchor
 		container.Parent = extras.Parent or Workspace
 	else
-		-- Fixed spot in the world.
+		-- Fixed spot in the world, centered on the target point.
 		freezeInWorld(container)
-		if anchor then
-			local cf = extras.CFrame or (position and CFrame.new(position))
-			if cf then container:PivotTo(cf) end
+		local cf = extras.CFrame or (position and CFrame.new(position))
+		if anchor and cf then
+			container:PivotTo(cf)
+			-- Re-center so the effect's BOUNDING-BOX middle sits on the target, not whatever random
+			-- part happened to be the anchor (templates are usually off-center, so they'd appear
+			-- shoved to one side / behind the target).
+			local boxCF = container:GetBoundingBox()
+			container:PivotTo(cf + (cf.Position - boxCF.Position))
 		end
 		container.Parent = extras.Parent or Workspace
 	end

@@ -141,9 +141,9 @@ local function applyCharacterStats(player, character)
         humanoid.WalkSpeed = Constants.Speed.GirlAWalk
         GirlA:StartPassives(player)
     elseif characterName == Types.Character.Otohime then
-        -- PLACEHOLDER survivor stats until Otohime's real numbers are built. Mirrors Momotaro so she
-        -- plays like a normal survivor. StartPassives is a no-op stub for now (see Otohime.lua).
-        humanoid.MaxHealth = Constants.Momotaro.MaxHealth
+        -- Otohime now has her own stats (Constants.Otohime). HP is still a placeholder value the kids
+        -- can change later; her abilities (Healing Pulse, Dark Moon) live in Otohime.lua.
+        humanoid.MaxHealth = Constants.Otohime.MaxHealth
         humanoid.Health = humanoid.MaxHealth
         humanoid.WalkSpeed = Constants.Speed.WardenWalk
         Otohime:StartPassives(player)
