@@ -66,6 +66,8 @@ local BreachClose           = ensureRemote("BreachClose", "RemoteEvent")
 local DisguisePickerSelect  = ensureRemote("DisguisePickerSelect", "RemoteEvent")
 local CharacterPicker       = ensureRemote("CharacterPicker", "RemoteEvent")
 local WeaponSwing           = ensureRemote("WeaponSwing", "RemoteEvent")  -- server -> all clients: "this player swung a weapon"
+local ShowHighlight         = ensureRemote("ShowHighlight", "RemoteEvent")  -- server -> ONE client: "glow this character, just on your screen"
+local PlaySound             = ensureRemote("PlaySound", "RemoteEvent")  -- server -> all clients: "play this sound (each client plays its own copy, so it's reliable)"
 
 ------------------------------------------------------------------------------
 -- Wire services together
@@ -148,6 +150,12 @@ local function applyCharacterStats(player, character)
         humanoid.WalkSpeed = Constants.Speed.WardenWalk
         Otohime:StartPassives(player)
     end
+
+    -- Per-character camera zoom-out cap. Most characters use the default; taller ones (Rokurokubi)
+    -- get a roomier cap so their face fits in frame. Runs on every spawn incl. the dressed swap.
+    local maxZoom = (Constants.Camera.PerCharacter and Constants.Camera.PerCharacter[characterName])
+        or Constants.Camera.MaxZoomDistance
+    player.CameraMaxZoomDistance = maxZoom
 
     -- Normalize jumping. The dressed rigs came in inconsistent (some with jumping disabled or near-zero
     -- JumpPower, some on UseJumpPower=false), so only Girl A could jump. We force a known state at spawn.

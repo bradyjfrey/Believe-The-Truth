@@ -143,15 +143,17 @@ GirlA.Abilities.BreachOfPrivacy = function(attacker, params)
         attackerHumanoid.WalkSpeed = originalSpeed * G.BreachOfPrivacy.SlowMultiplier
     end
 
-    -- Highlight the target so Girl A can see them. Visible to everyone right
-    -- now — see TODO in Momotaro Bird's Eye View; same fix would apply here.
-    local highlight = nil
-    if target.Character then
-        highlight = Instance.new("Highlight")
-        highlight.FillColor = Color3.fromRGB(255, 100, 100)
-        highlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-        highlight.Adornee = target.Character
-        highlight.Parent = target.Character
+    -- Highlight the target so Girl A can see them -- but ONLY on Girl A's screen.
+    -- We send a private message to her client, which draws the glow locally (see
+    -- HighlightReveal.client.lua). The glow lasts as long as the popup is up, so
+    -- the client removes it on its own after PopupSeconds.
+    local showHighlight = ReplicatedStorage.Remotes:FindFirstChild("ShowHighlight")
+    if showHighlight and target.Character then
+        showHighlight:FireClient(attacker, target.Character, {
+            Fill = Color3.fromRGB(255, 100, 100),
+            Outline = Color3.fromRGB(255, 0, 0),
+            Seconds = G.BreachOfPrivacy.PopupSeconds,
+        })
     end
 
     EffectsService:Play("GirlABreachPopup", nil, {Target = target})
@@ -181,7 +183,6 @@ GirlA.Abilities.BreachOfPrivacy = function(attacker, params)
         end
     end
 
-    if highlight and highlight.Parent then highlight:Destroy() end
     if attackerHumanoid and attackerHumanoid.Parent then
         attackerHumanoid.WalkSpeed = originalSpeed
     end

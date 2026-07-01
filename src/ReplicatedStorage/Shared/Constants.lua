@@ -27,6 +27,12 @@ Constants.Camera = {
     -- back to a bird's-eye view and spot other players across the map. (Roblox default is 128.)
     -- Our characters are ~2.4x normal size, so this is a little roomier than a normal-rig game.
     MaxZoomDistance = 28,
+    -- Some characters are taller and need more room to fit in frame. Rokurokubi floats AND has
+    -- the long neck, so her face sits way above her body -- 28 studs cuts it off. Give her more.
+    -- Anyone not listed here uses MaxZoomDistance above. (Keyed by character name.)
+    PerCharacter = {
+        Rokurokubi = 45,
+    },
 }
 
 ------------------------------------------------------------------------------
@@ -104,7 +110,19 @@ Constants.Momotaro = {
         SlowMultiplier = 0.5,        -- Yokai moves at 50% of their speed while near Inuta
         InutaHealth = 40,
         InutaLifetimeSeconds = 60,
-        InutaAssetId = 5192647128,   -- Creator Store 3D Asset / Character for Inuta the dog
+        InutaAssetId = 5192647128,   -- Creator Store 3D Asset / Character for Inuta the dog (fallback only)
+        -- Momotaro's daughter built TWO dog models. They're both just the LOOK of
+        -- this one Guard Dog ability -- both trot out together and guard as a pair,
+        -- sharing the single bark/slow/HP behavior above. These are the exact model
+        -- names inside ReplicatedStorage.Companions. (If you rename them in Roblox
+        -- Studio, update these to match.)
+        -- Order matters: the FIRST name goes to Momotaro's LEFT, the second to his
+        -- RIGHT (see DogSpacingStuds below). So larger-on-left, smaller-on-right.
+        DogModelNames = { "Momotaro's larger dog", "Momotaro's smaller dog" },
+        DeployForwardStuds = 5,      -- how far IN FRONT of Momotaro the pair plants (so their noses aren't in his back)
+        BarkSoundId = "rbxassetid://115130102707678",  -- Creator Store dog bark, plays from the dogs each bark tick
+        BarkVolume = 0.5,            -- how loud the bark is (0 = silent, 1 = full)
+        DogSpacingStuds = 30,        -- total left-right gap between the two dogs, centered on the post -- 30 means each dog sits 15 studs out to its own side
     },
 
     MessyEater = {

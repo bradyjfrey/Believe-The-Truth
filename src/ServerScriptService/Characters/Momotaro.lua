@@ -226,62 +226,103 @@ Momotaro.Abilities.GuardDog = function(player, params)
 
     AbilityModule.startCooldown(player, "GuardDog", M.GuardDog.CooldownSeconds)
 
-    local spawnPos = rootPart.Position - Vector3.new(0, 2, 0)
-    local inuta = spawnCompanion(
-        "Inuta",
-        M.GuardDog.InutaAssetId,
-        Color3.fromRGB(120, 80, 40),     -- brown placeholder fallback
-        Vector3.new(3, 2, 4),
-        spawnPos,
-        workspace
-    )
-    EffectsService:Play("MomotaroInutaDeploy", spawnPos)
+    -- The two dogs stand guard as a PAIR at Momotaro's feet. This spot is the
+    -- "guard post": we measure how far away Yokai are from here, and both dogs
+    -- sit around it. (They're both just the LOOK of this one ability -- there's
+    -- a single shared bark/slow/HP behavior, not one per dog.)
+    -- Drop to foot level, and push the post a few studs IN FRONT of Momotaro so
+    -- the dogs aren't standing inside his back.
+    local guardCenter = rootPart.Position
+        - Vector3.new(0, 2, 0)
+        + rootPart.CFrame.LookVector * M.GuardDog.DeployForwardStuds
 
-    -- Store Inuta's "HP" as an attribute so the placeholder Part doesn't
-    -- need a Humanoid. If art-team Model has its own Humanoid later, we
-    -- could swap to reading that instead.
-    inuta:SetAttribute("Health", M.GuardDog.InutaHealth)
+    -- Spawn every dog model the daughter built, lined up left-to-right and
+    -- centered on the guard post. If none of the models are found in
+    -- ReplicatedStorage.Companions, spawnCompanion drops a brown placeholder so
+    -- the ability still works.
+    local dogs = {}
+    local names = M.GuardDog.DogModelNames
+    for i, dogName in ipairs(names) do
+        local sideStep = (i - (#names + 1) / 2) * M.GuardDog.DogSpacingStuds
+        local dogPos = guardCenter + rootPart.CFrame.RightVector * sideStep
+        local dog = spawnCompanion(
+            dogName,
+            M.GuardDog.InutaAssetId,
+            Color3.fromRGB(120, 80, 40),     -- brown placeholder fallback
+            Vector3.new(3, 2, 4),
+            dogPos,
+            workspace
+        )
+        -- Face each dog the way Momotaro is looking, so they guard "outward". If
+        -- a dog ends up facing the wrong way, its model's built-in front differs
+        -- from ours -- spin it in Roblox Studio, or tell me and I'll add a facing
+        -- tweak like the Hawk's.
+        if dog:IsA("Model") and dog.PrimaryPart then
+            dog:PivotTo(CFrame.lookAt(dogPos, dogPos + rootPart.CFrame.LookVector))
+        end
+        -- Freeze the dog in place. There's no walk animation yet, so anchoring
+        -- every part keeps it standing at its post instead of collapsing under
+        -- gravity or drifting.
+        for _, part in ipairs(dog:GetDescendants()) do
+            if part:IsA("BasePart") then part.Anchored = true end
+        end
+        if dog:IsA("BasePart") then dog.Anchored = true end
+        table.insert(dogs, dog)
+    end
+
+    EffectsService:Play("MomotaroInutaDeploy", guardCenter)
+
+    -- The pair shares ONE pool of HP (the spec's 40). Nothing damages the dogs
+    -- yet, but when something does, subtract from here -- at 0 they leave early.
+    local health = M.GuardDog.InutaHealth
 
     local startTime = tick()
     local slowedYokai = {}    -- {humanoid = originalWalkSpeed}
+    local active = true
 
     local function despawn()
+        active = false
         for yokaiHumanoid, originalSpeed in pairs(slowedYokai) do
             if yokaiHumanoid and yokaiHumanoid.Parent then
                 yokaiHumanoid.WalkSpeed = originalSpeed
             end
         end
-        if inuta and inuta.Parent then inuta:Destroy() end
+        for _, dog in ipairs(dogs) do
+            if dog and dog.Parent then dog:Destroy() end
+        end
     end
 
-    -- Detection loop: every Heartbeat, find Yokai in range and apply slow.
+    -- Which Yokai humanoids are within range of the guard post right now?
+    local function yokaiInRange()
+        local found = {}
+        for _, otherPlayer in ipairs(Players:GetPlayers()) do
+            if isYokai(otherPlayer) then
+                local otherRoot = otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if otherRoot and (otherRoot.Position - guardCenter).Magnitude <= M.GuardDog.DetectRangeStuds then
+                    local h = getHumanoid(otherPlayer)
+                    if h then found[h] = true end
+                end
+            end
+        end
+        return found
+    end
+
+    -- Detection loop: every Heartbeat, slow Yokai in range (and restore anyone
+    -- who walked back out). Ends the whole pair when time's up or HP hits 0.
     local detectionConn
     detectionConn = RunService.Heartbeat:Connect(function()
-        if not inuta or not inuta.Parent then
+        if not active then
             if detectionConn then detectionConn:Disconnect() end
             return
         end
         local elapsed = tick() - startTime
-        local health = inuta:GetAttribute("Health") or 0
         if elapsed >= M.GuardDog.InutaLifetimeSeconds or health <= 0 then
             if detectionConn then detectionConn:Disconnect() end
             despawn()
             return
         end
 
-        -- Who's in range right now?
-        local inRange = {}
-        local inutaPos = inuta:IsA("Model") and inuta:GetPivot().Position or inuta.Position
-        for _, otherPlayer in ipairs(Players:GetPlayers()) do
-            if isYokai(otherPlayer) then
-                local otherRoot = otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if otherRoot and (otherRoot.Position - inutaPos).Magnitude <= M.GuardDog.DetectRangeStuds then
-                    local h = getHumanoid(otherPlayer)
-                    if h then inRange[h] = true end
-                end
-            end
-        end
-
+        local inRange = yokaiInRange()
         -- Apply slow to newly in-range Yokai, restore speed to those who left.
         for h in pairs(inRange) do
             if not slowedYokai[h] then
@@ -297,23 +338,39 @@ Momotaro.Abilities.GuardDog = function(player, params)
         end
     end)
 
-    -- Bark loop: damage tick once per BarkIntervalSeconds.
+    -- Bark loop: once per BarkIntervalSeconds, bite every Yokai in range for a
+    -- little damage. One bark sound for the whole pair, from the guard post.
     task.spawn(function()
-        while inuta and inuta.Parent do
+        while active do
             task.wait(M.GuardDog.BarkIntervalSeconds)
-            if not inuta or not inuta.Parent then break end
-            local inutaPos = inuta:IsA("Model") and inuta:GetPivot().Position or inuta.Position
-            for _, otherPlayer in ipairs(Players:GetPlayers()) do
-                if isYokai(otherPlayer) then
-                    local otherRoot = otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart")
-                    if otherRoot and (otherRoot.Position - inutaPos).Magnitude <= M.GuardDog.DetectRangeStuds then
-                        local h = getHumanoid(otherPlayer)
-                        if h then
-                            local barkDamage = math.random(M.GuardDog.MinDamage, M.GuardDog.MaxDamage)
-                            h:TakeDamage(barkDamage)
-                            EffectsService:Play("MomotaroInutaBark", inutaPos)
-                        end
-                    end
+            if not active then break end
+
+            -- >>> TEMP DEBUG (remove once the dogs detect Yokai) <<<
+            -- Prints, once per second, what each player looks like to the dogs: their Team
+            -- attribute and how far they are from the guard post (range is DetectRangeStuds).
+            for _, p in ipairs(Players:GetPlayers()) do
+                local pr = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
+                local dist = pr and math.floor((pr.Position - guardCenter).Magnitude) or "no root"
+                print(string.format("[Dogs] %s  Team=%s  isYokai=%s  dist=%s (range %d)",
+                    p.Name, tostring(p:GetAttribute("Team")), tostring(isYokai(p)), tostring(dist),
+                    M.GuardDog.DetectRangeStuds))
+            end
+            -- >>> END TEMP DEBUG <<<
+
+            local barked = false
+            for h in pairs(yokaiInRange()) do
+                local barkDamage = math.random(M.GuardDog.MinDamage, M.GuardDog.MaxDamage)
+                h:TakeDamage(barkDamage)
+                barked = true
+            end
+            if barked then
+                EffectsService:Play("MomotaroInutaBark", guardCenter)
+                -- Bark sound: ask every client to play it FROM one of the dogs (so it's positional).
+                -- We play it client-side because server-made sounds are unreliable to hear.
+                local firstDog = dogs[1]
+                local soundRemote = ReplicatedStorage.Remotes:FindFirstChild("PlaySound")
+                if firstDog and soundRemote then
+                    soundRemote:FireAllClients(companionAnchor(firstDog), M.GuardDog.BarkSoundId, M.GuardDog.BarkVolume)
                 end
             end
         end
@@ -489,25 +546,26 @@ function Momotaro:StartPassives(player)
 
             EffectsService:Play("MomotaroBirdsEyeView", nil)
 
-            -- TODO: highlights are currently visible to all players, not just
-            -- Momotaro. To make them Momotaro-only, swap this for a remote
-            -- that tells Momotaro's client to create the highlight locally.
-            local highlights = {}
-            for _, other in ipairs(Players:GetPlayers()) do
-                if isYokai(other) and other.Character then
-                    local h = Instance.new("Highlight")
-                    h.FillColor = Color3.fromRGB(255, 0, 0)
-                    h.OutlineColor = Color3.fromRGB(255, 150, 150)
-                    h.Adornee = other.Character
-                    h.Parent = other.Character
-                    table.insert(highlights, h)
+            -- Reveal the Yokai to MOMOTARO ONLY. We send a private message to his
+            -- client for each Yokai, and his client draws the red glow locally (see
+            -- HighlightReveal.client.lua). If the server drew the glow, everyone --
+            -- including the Yokai -- would see it, which would give the reveal away.
+            local showHighlight = ReplicatedStorage.Remotes:FindFirstChild("ShowHighlight")
+            if showHighlight then
+                for _, other in ipairs(Players:GetPlayers()) do
+                    if isYokai(other) and other.Character then
+                        showHighlight:FireClient(player, other.Character, {
+                            Fill = Color3.fromRGB(255, 0, 0),
+                            Outline = Color3.fromRGB(255, 150, 150),
+                            Seconds = M.BirdsEyeView.HighlightSeconds,
+                        })
+                    end
                 end
             end
 
+            -- Wait out the reveal window before the next scan, so the timing (a
+            -- brief peek every so often) stays the same as before.
             task.wait(M.BirdsEyeView.HighlightSeconds)
-            for _, h in ipairs(highlights) do
-                if h.Parent then h:Destroy() end
-            end
         end
     end)
 end
