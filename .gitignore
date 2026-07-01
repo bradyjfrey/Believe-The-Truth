@@ -28,5 +28,9 @@
 # Local backups folder — kept in the repo dir for convenience, never tracked/pushed.
 /• backups/
 
+# Claude Code — personal/local settings only (machine-specific paths + permissions).
+# The shared project skills in .claude/skills/ and the root CLAUDE.md ARE tracked.
+.claude/settings.local.json
+
 # Misc
 .DS_Store
