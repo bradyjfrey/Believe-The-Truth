@@ -106,7 +106,11 @@ Constants.Momotaro = {
         DetectRangeStuds = 50,
         MinDamage = 1,
         MaxDamage = 5,
-        BarkIntervalSeconds = 1,     -- one bark per second while a Yokai is in range
+        BarkIntervalSeconds = 1,     -- how often the dogs BITE (deal damage) while a Yokai is in range
+        -- The bark SOUND is separate from the bite, on a loose random rhythm from a random dog, so it
+        -- sounds like two real dogs instead of one metronome. Each gap is a random time in this range:
+        BarkGapMin = 0.6,            -- shortest gap between barks (seconds)
+        BarkGapMax = 1.4,            -- longest gap between barks (seconds)
         SlowMultiplier = 0.5,        -- Yokai moves at 50% of their speed while near Inuta
         InutaHealth = 40,
         InutaLifetimeSeconds = 60,
@@ -121,7 +125,7 @@ Constants.Momotaro = {
         DogModelNames = { "Momotaro's larger dog", "Momotaro's smaller dog" },
         DeployForwardStuds = 5,      -- how far IN FRONT of Momotaro the pair plants (so their noses aren't in his back)
         BarkSoundId = "rbxassetid://115130102707678",  -- Creator Store dog bark, plays from the dogs each bark tick
-        BarkVolume = 0.5,            -- how loud the bark is (0 = silent, 1 = full)
+        BarkVolume = 3,              -- how loud the bark is (Roblox sound volume goes 0..10; default is 0.5)
         DogSpacingStuds = 30,        -- total left-right gap between the two dogs, centered on the post -- 30 means each dog sits 15 studs out to its own side
     },
 
@@ -132,6 +136,10 @@ Constants.Momotaro = {
         SlipSeconds = 2,             -- how long a Yokai is ragdolled after slipping
         SaruEatSeconds = 0.5,        -- short delay so it looks like Saru ate it
         SaruAssetId = 9230969826,    -- Creator Store character model for Saru the monkey
+        BananaPeelAssetId = 2795329450,  -- Creator Store banana-peel mesh (the trap's LOOK). Falls back to
+                                         -- a ReplicatedStorage.Companions "BananaPeel" model, then a yellow block.
+        BananaPeelScale = 4,         -- grow the peel so it's not lost in the grass (1 = its natural size). Tune to taste.
+        TriggerPadSize = Vector3.new(5, 3, 5),  -- the invisible "slip zone" a Yokai must step into. Bigger = easier to hit.
     },
 
     KibiDango = {

@@ -130,6 +130,22 @@ local function spawnCompanion(name, assetId, fallbackColor, fallbackSize, positi
     return part
 end
 
+-- Sits a spawned thing (Model or Part) flat on the floor: its LOWEST point rests on
+-- groundY, centered over (x, z). Props like the banana peel need this because our rigs
+-- are ~2.4x size, so "drop it at the player's feet" actually lands around thigh height.
+local function groundOnFloor(thing, x, z, groundY)
+    if thing:IsA("Model") then
+        if not thing.PrimaryPart then
+            thing.PrimaryPart = thing:FindFirstChildWhichIsA("BasePart")
+        end
+        local boxCF, boxSize = thing:GetBoundingBox()
+        local newCenter = Vector3.new(x, groundY + boxSize.Y / 2, z)
+        thing:PivotTo(thing:GetPivot() + (newCenter - boxCF.Position))   -- slide it, keep its facing
+    elseif thing:IsA("BasePart") then
+        thing.Position = Vector3.new(x, groundY + thing.Size.Y / 2, z)
+    end
+end
+
 -- Returns the BasePart we should treat as the "anchor" for a companion (so we
 -- can read its position or anchor it).
 local function companionAnchor(companion)
@@ -338,39 +354,37 @@ Momotaro.Abilities.GuardDog = function(player, params)
         end
     end)
 
-    -- Bark loop: once per BarkIntervalSeconds, bite every Yokai in range for a
-    -- little damage. One bark sound for the whole pair, from the guard post.
+    -- BITE loop: once per BarkIntervalSeconds, the dogs bite every Yokai in range
+    -- for a little damage. Kept on a STEADY beat so the damage rate stays balanced
+    -- (spec: 1-5 damage every second). No sound here -- the barking is its own loop.
     task.spawn(function()
         while active do
             task.wait(M.GuardDog.BarkIntervalSeconds)
             if not active then break end
-
-            -- >>> TEMP DEBUG (remove once the dogs detect Yokai) <<<
-            -- Prints, once per second, what each player looks like to the dogs: their Team
-            -- attribute and how far they are from the guard post (range is DetectRangeStuds).
-            for _, p in ipairs(Players:GetPlayers()) do
-                local pr = p.Character and p.Character:FindFirstChild("HumanoidRootPart")
-                local dist = pr and math.floor((pr.Position - guardCenter).Magnitude) or "no root"
-                print(string.format("[Dogs] %s  Team=%s  isYokai=%s  dist=%s (range %d)",
-                    p.Name, tostring(p:GetAttribute("Team")), tostring(isYokai(p)), tostring(dist),
-                    M.GuardDog.DetectRangeStuds))
-            end
-            -- >>> END TEMP DEBUG <<<
-
-            local barked = false
             for h in pairs(yokaiInRange()) do
-                local barkDamage = math.random(M.GuardDog.MinDamage, M.GuardDog.MaxDamage)
-                h:TakeDamage(barkDamage)
-                barked = true
+                local biteDamage = math.random(M.GuardDog.MinDamage, M.GuardDog.MaxDamage)
+                h:TakeDamage(biteDamage)
             end
-            if barked then
+        end
+    end)
+
+    -- BARK-SOUND loop: while any Yokai is near, the dogs bark on a loose, RANDOM
+    -- rhythm from a RANDOM one of the two dogs -- so it sounds like two real dogs,
+    -- not one metronome. Purely audio; the biting above is what actually hurts.
+    task.spawn(function()
+        while active do
+            -- Wait a random gap so the barks aren't a perfect beat.
+            local gap = M.GuardDog.BarkGapMin
+                + math.random() * (M.GuardDog.BarkGapMax - M.GuardDog.BarkGapMin)
+            task.wait(gap)
+            if not active then break end
+            -- Only bark if there's actually a Yokai in range to bark at.
+            if next(yokaiInRange()) then
                 EffectsService:Play("MomotaroInutaBark", guardCenter)
-                -- Bark sound: ask every client to play it FROM one of the dogs (so it's positional).
-                -- We play it client-side because server-made sounds are unreliable to hear.
-                local firstDog = dogs[1]
+                local dog = dogs[math.random(1, #dogs)]   -- a random one of the dogs
                 local soundRemote = ReplicatedStorage.Remotes:FindFirstChild("PlaySound")
-                if firstDog and soundRemote then
-                    soundRemote:FireAllClients(companionAnchor(firstDog), M.GuardDog.BarkSoundId, M.GuardDog.BarkVolume)
+                if dog and soundRemote then
+                    soundRemote:FireAllClients(companionAnchor(dog), M.GuardDog.BarkSoundId, M.GuardDog.BarkVolume)
                 end
             end
         end
@@ -403,20 +417,71 @@ Momotaro.Abilities.MessyEater = function(player, params)
     task.wait(M.MessyEater.SaruEatSeconds)
     if saru and saru.Parent then saru:Destroy() end
 
-    -- Drop the banana peel where Saru was.
-    local peel = Instance.new("Part")
-    peel.Name = "BananaPeel"
-    peel.Size = Vector3.new(2, 0.3, 2)
-    peel.Color = Color3.fromRGB(240, 220, 80)
-    peel.Material = Enum.Material.SmoothPlastic
-    peel.Anchored = true
-    peel.CanCollide = false
-    peel.Position = saruPos
-    peel.Parent = workspace
-    EffectsService:Play("MomotaroBananaDrop", peel.Position)
+    -- Find the floor under the drop spot (raycast straight down). Our rigs are ~2.4x size,
+    -- so the HumanoidRootPart sits high off the ground -- without this the peel would float
+    -- at thigh height. (Ignore Momotaro himself so the ray hits the ground, not his body.)
+    local groundParams = RaycastParams.new()
+    groundParams.FilterType = Enum.RaycastFilterType.Exclude
+    groundParams.FilterDescendantsInstances = { player.Character }
+    local groundHit = workspace:Raycast(rootPart.Position, Vector3.new(0, -50, 0), groundParams)
+    local groundY = groundHit and groundHit.Position.Y or (rootPart.Position.Y - 3)
+
+    -- The VISIBLE peel: the real banana-peel mesh if we can get it, else a yellow block.
+    -- It's purely a LOOK -- anchored + no-collide -- resting flat on the floor. (Same 3-tier
+    -- loader the companions use: a ReplicatedStorage.Companions model first, then the Creator
+    -- Store asset, then the fallback block.)
+    local peelVisual = spawnCompanion(
+        "BananaPeel",
+        M.MessyEater.BananaPeelAssetId,
+        Color3.fromRGB(240, 220, 80),
+        Vector3.new(2, 0.3, 2),
+        Vector3.new(saruPos.X, groundY, saruPos.Z),
+        workspace
+    )
+    for _, part in ipairs(peelVisual:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.Anchored = true
+            part.CanCollide = false
+        end
+    end
+    if peelVisual:IsA("BasePart") then
+        peelVisual.Anchored = true
+        peelVisual.CanCollide = false
+    end
+    -- Grow it so it reads in the grass (the mesh is small next to our ~2.4x world). Do this
+    -- BEFORE grounding, since scaling changes its size and we want it sitting flat afterward.
+    local scale = M.MessyEater.BananaPeelScale
+    if scale and scale ~= 1 then
+        if peelVisual:IsA("Model") then
+            peelVisual:ScaleTo(scale)
+        elseif peelVisual:IsA("BasePart") then
+            peelVisual.Size = peelVisual.Size * scale
+        end
+    end
+    groundOnFloor(peelVisual, saruPos.X, saruPos.Z, groundY)
+
+    -- The hidden TRIGGER PAD: an invisible flat part on the floor that does the actual
+    -- "step on it" detection. Detecting here (not on the fancy mesh) keeps the slip reliable
+    -- no matter what shape the peel model is.
+    local pad = Instance.new("Part")
+    pad.Name = "BananaPeelTrigger"
+    pad.Size = M.MessyEater.TriggerPadSize
+    pad.Anchored = true
+    pad.CanCollide = false
+    pad.Transparency = 1
+    pad.Position = Vector3.new(saruPos.X, groundY + pad.Size.Y / 2, saruPos.Z)
+    pad.Parent = workspace
+
+    EffectsService:Play("MomotaroBananaDrop", pad.Position)
+
+    -- Remove BOTH the peel and its pad together (when someone slips OR when time's up).
+    local function cleanup()
+        if peelVisual and peelVisual.Parent then peelVisual:Destroy() end
+        if pad and pad.Parent then pad:Destroy() end
+    end
 
     local triggered = false
-    peel.Touched:Connect(function(hit)
+    pad.Touched:Connect(function(hit)
         if triggered then return end
         local model = hit:FindFirstAncestorOfClass("Model")
         if not model then return end
@@ -426,7 +491,7 @@ Momotaro.Abilities.MessyEater = function(player, params)
         if not h then return end
         triggered = true
 
-        EffectsService:Play("MomotaroBananaSlip", peel.Position)
+        EffectsService:Play("MomotaroBananaSlip", pad.Position)
 
         -- Ragdoll: zero out movement and put the humanoid in PlatformStanding,
         -- which acts like a knockdown.
@@ -443,10 +508,11 @@ Momotaro.Abilities.MessyEater = function(player, params)
                 h:ChangeState(Enum.HumanoidStateType.GettingUp)
             end
         end)
-        peel:Destroy()
+        cleanup()
     end)
 
-    Debris:AddItem(peel, M.MessyEater.PeelLifetimeSeconds)
+    -- Auto-remove after its lifetime if nobody slipped.
+    task.delay(M.MessyEater.PeelLifetimeSeconds, cleanup)
 end
 
 ------------------------------------------------------------------------------
