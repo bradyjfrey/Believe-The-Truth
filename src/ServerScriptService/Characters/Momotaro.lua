@@ -403,28 +403,48 @@ Momotaro.Abilities.MessyEater = function(player, params)
 
     AbilityModule.startCooldown(player, "MessyEater", M.MessyEater.CooldownSeconds)
 
-    local saruPos = rootPart.Position - Vector3.new(0, 2, 0)
+    -- The drop spot sits a few studs IN FRONT of Momotaro. Spawning at his own position
+    -- hid Saru inside his legs (and the collision shoved Momotaro upward).
+    local dropSpot = rootPart.Position
+        + rootPart.CFrame.LookVector * M.MessyEater.SaruForwardStuds
+
+    -- Find the floor under the drop spot (raycast straight down). Our rigs are ~2.4x size,
+    -- so the HumanoidRootPart sits high off the ground -- without this Saru and the peel
+    -- would float at thigh height. (Ignore Momotaro himself so the ray hits the ground.)
+    local groundParams = RaycastParams.new()
+    groundParams.FilterType = Enum.RaycastFilterType.Exclude
+    groundParams.FilterDescendantsInstances = { player.Character }
+    local groundHit = workspace:Raycast(dropSpot, Vector3.new(0, -50, 0), groundParams)
+    local groundY = groundHit and groundHit.Position.Y or (rootPart.Position.Y - 3)
+
     local saru = spawnCompanion(
         "Saru",
         M.MessyEater.SaruAssetId,
         Color3.fromRGB(240, 220, 80),     -- yellow placeholder fallback
         Vector3.new(2, 2, 2),
-        saruPos,
+        dropSpot,
         workspace
     )
-    EffectsService:Play("MomotaroSaruEat", saruPos)
+    -- Saru is a brief visual -- never let his body shove players around.
+    for _, part in ipairs(saru:GetDescendants()) do
+        if part:IsA("BasePart") then part.CanCollide = false end
+    end
+    if saru:IsA("BasePart") then saru.CanCollide = false end
+    -- Grow the kids' monkey so he reads next to our ~12-stud rigs. Scale BEFORE
+    -- grounding so he still ends up standing flat on the floor.
+    local saruScale = M.MessyEater.SaruScale
+    if saruScale and saruScale ~= 1 then
+        if saru:IsA("Model") then
+            saru:ScaleTo(saruScale)
+        elseif saru:IsA("BasePart") then
+            saru.Size = saru.Size * saruScale
+        end
+    end
+    groundOnFloor(saru, dropSpot.X, dropSpot.Z, groundY)
+    EffectsService:Play("MomotaroSaruEat", saru:GetPivot().Position)
 
     task.wait(M.MessyEater.SaruEatSeconds)
     if saru and saru.Parent then saru:Destroy() end
-
-    -- Find the floor under the drop spot (raycast straight down). Our rigs are ~2.4x size,
-    -- so the HumanoidRootPart sits high off the ground -- without this the peel would float
-    -- at thigh height. (Ignore Momotaro himself so the ray hits the ground, not his body.)
-    local groundParams = RaycastParams.new()
-    groundParams.FilterType = Enum.RaycastFilterType.Exclude
-    groundParams.FilterDescendantsInstances = { player.Character }
-    local groundHit = workspace:Raycast(rootPart.Position, Vector3.new(0, -50, 0), groundParams)
-    local groundY = groundHit and groundHit.Position.Y or (rootPart.Position.Y - 3)
 
     -- The VISIBLE peel: the real banana-peel mesh if we can get it, else a yellow block.
     -- It's purely a LOOK -- anchored + no-collide -- resting flat on the floor. (Same 3-tier
@@ -435,7 +455,7 @@ Momotaro.Abilities.MessyEater = function(player, params)
         M.MessyEater.BananaPeelAssetId,
         Color3.fromRGB(240, 220, 80),
         Vector3.new(2, 0.3, 2),
-        Vector3.new(saruPos.X, groundY, saruPos.Z),
+        Vector3.new(dropSpot.X, groundY, dropSpot.Z),
         workspace
     )
     for _, part in ipairs(peelVisual:GetDescendants()) do
@@ -458,7 +478,7 @@ Momotaro.Abilities.MessyEater = function(player, params)
             peelVisual.Size = peelVisual.Size * scale
         end
     end
-    groundOnFloor(peelVisual, saruPos.X, saruPos.Z, groundY)
+    groundOnFloor(peelVisual, dropSpot.X, dropSpot.Z, groundY)
 
     -- The hidden TRIGGER PAD: an invisible flat part on the floor that does the actual
     -- "step on it" detection. Detecting here (not on the fancy mesh) keeps the slip reliable
@@ -469,7 +489,7 @@ Momotaro.Abilities.MessyEater = function(player, params)
     pad.Anchored = true
     pad.CanCollide = false
     pad.Transparency = 1
-    pad.Position = Vector3.new(saruPos.X, groundY + pad.Size.Y / 2, saruPos.Z)
+    pad.Position = Vector3.new(dropSpot.X, groundY + pad.Size.Y / 2, dropSpot.Z)
     pad.Parent = workspace
 
     EffectsService:Play("MomotaroBananaDrop", pad.Position)

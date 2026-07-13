@@ -134,8 +134,10 @@ Constants.Momotaro = {
         CooldownSeconds = 15,
         PeelLifetimeSeconds = 60,
         SlipSeconds = 2,             -- how long a Yokai is ragdolled after slipping
-        SaruEatSeconds = 0.5,        -- short delay so it looks like Saru ate it
+        SaruEatSeconds = 2,          -- how long Saru is on screen "eating" before the peel drops
         SaruAssetId = 9230969826,    -- Creator Store character model for Saru the monkey
+        SaruScale = 3,               -- the kids' monkey is ~3.5 studs tall; grown so he's clearly bigger than the peel. Tune to taste.
+        SaruForwardStuds = 8,        -- Saru pops in this far in FRONT of Momotaro (at his own spot he hid inside the legs)
         BananaPeelAssetId = 2795329450,  -- Creator Store banana-peel mesh (the trap's LOOK). Falls back to
                                          -- a ReplicatedStorage.Companions "BananaPeel" model, then a yellow block.
         BananaPeelScale = 4,         -- grow the peel so it's not lost in the grass (1 = its natural size). Tune to taste.
