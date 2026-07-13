@@ -1,7 +1,9 @@
 -- HUD.client.lua
 -- The on-screen heads-up display. Shows:
---   * Top center: round timer + state ("Lobby: 0:18", "Round: 2:47", "Wardens win!")
---   * Top left:   the local player's role ("You are: Momotaro (Warden)")
+--   * Bottom center: round timer + state, with the ABILITY ICONS row above it
+--                    (key + name per ability; icons gray out + count down on cooldown)
+--   * Top left:      the local player's role ("You are: Momotaro (Warden)")
+--   * Bottom left:   health bar; bottom right: stamina bar
 --
 -- All the data comes from attributes the server sets:
 --   ReplicatedStorage.Remotes.RoundState        - "Lobby" / "InRound" / "Ending"
@@ -13,9 +15,12 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 
 local localPlayer = Players.LocalPlayer
 local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local AbilityBindings = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("AbilityBindings"))
+local Constants = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Constants"))
 
 -- Turn off Roblox's built-in health bar -- we draw our own below (so we don't show two).
 -- The core GUI can be briefly unavailable on join, so retry until it takes.
@@ -243,6 +248,180 @@ staminaFill.Parent = staminaTrack
 local staminaFillCorner = Instance.new("UICorner")
 staminaFillCorner.CornerRadius = UDim.new(0, 8)
 staminaFillCorner.Parent = staminaFill
+
+------------------------------------------------------------------------------
+-- Bottom-center ABILITY icons -- one square per ability, sitting just above the
+-- round timer. Each square shows the key ("Q") and the ability's name. While the
+-- ability recharges, a dark shade covers the square and drains away, and the
+-- seconds left tick down in the middle. The server stamps an
+-- "AbilityReadyAt_<Name>" attribute on the player every time a cooldown starts
+-- (see AbilityModule.startCooldown) -- that's all the HUD needs.
+------------------------------------------------------------------------------
+
+local abilityRow = Instance.new("Frame")
+abilityRow.Name = "AbilityRow"
+abilityRow.AnchorPoint = Vector2.new(0.5, 1)
+abilityRow.Position = UDim2.new(0.5, 0, 1, -96)   -- just above the round timer
+abilityRow.Size = UDim2.fromOffset(600, 72)
+abilityRow.BackgroundTransparency = 1
+abilityRow.Parent = screenGui
+
+local abilityLayout = Instance.new("UIListLayout")
+abilityLayout.FillDirection = Enum.FillDirection.Horizontal
+abilityLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+abilityLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
+abilityLayout.Padding = UDim.new(0, 8)
+abilityLayout.Parent = abilityRow
+
+-- What to print on the key badge for mouse "keys".
+local function keyText(key)
+	if key == Enum.UserInputType.MouseButton1 then return "LMB" end
+	if key == Enum.UserInputType.MouseButton2 then return "RMB" end
+	return key.Name   -- Q, E, R, F...
+end
+
+local abilityIcons = {}   -- one record per icon: the gui pieces + its cooldown timing
+
+local function clearAbilityIcons()
+	for _, icon in ipairs(abilityIcons) do
+		icon.conn:Disconnect()
+		icon.frame:Destroy()
+	end
+	abilityIcons = {}
+end
+
+local function buildAbilityIcons(characterName)
+	clearAbilityIcons()
+	local list = characterName and AbilityBindings[characterName]
+	if not list then return end
+
+	for order, binding in ipairs(list) do
+		local frame = Instance.new("Frame")
+		frame.Name = binding.Ability
+		frame.LayoutOrder = order
+		frame.Size = UDim2.fromOffset(72, 72)
+		frame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+		frame.BackgroundTransparency = 0.1
+		frame.BorderSizePixel = 0
+		frame.Parent = abilityRow
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 10)
+		corner.Parent = frame
+
+		-- Big key letter on top ("Q").
+		local keyLabel = Instance.new("TextLabel")
+		keyLabel.Size = UDim2.new(1, 0, 0.52, 0)
+		keyLabel.Position = UDim2.new(0, 0, 0, 4)
+		keyLabel.BackgroundTransparency = 1
+		keyLabel.Font = Enum.Font.GothamBold
+		keyLabel.TextScaled = true
+		keyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		keyLabel.Text = keyText(binding.Key)
+		keyLabel.Parent = frame
+
+		-- Small ability name underneath ("Banana").
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Size = UDim2.new(1, -6, 0.26, 0)
+		nameLabel.Position = UDim2.new(0, 3, 0.66, 0)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Font = Enum.Font.Gotham
+		nameLabel.TextScaled = true
+		nameLabel.TextColor3 = Color3.fromRGB(190, 190, 205)
+		nameLabel.Text = binding.Label
+		nameLabel.Parent = frame
+
+		-- The recharge shade: covers the whole square when the cooldown starts,
+		-- then drains away (bottom edge rises) as the ability comes back.
+		local shade = Instance.new("Frame")
+		shade.Size = UDim2.fromScale(1, 0)
+		shade.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		shade.BackgroundTransparency = 0.45
+		shade.BorderSizePixel = 0
+		shade.ZIndex = 2
+		shade.Parent = frame
+		local shadeCorner = Instance.new("UICorner")
+		shadeCorner.CornerRadius = UDim.new(0, 10)
+		shadeCorner.Parent = shade
+
+		-- The seconds left, centered on top of everything while recharging.
+		local secondsLabel = Instance.new("TextLabel")
+		secondsLabel.Size = UDim2.fromScale(1, 1)
+		secondsLabel.BackgroundTransparency = 1
+		secondsLabel.Font = Enum.Font.GothamBold
+		secondsLabel.TextScaled = true
+		secondsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		secondsLabel.Visible = false
+		secondsLabel.ZIndex = 3
+		secondsLabel.Parent = frame
+		local secondsStroke = Instance.new("UIStroke")
+		secondsStroke.Thickness = 1.5
+		secondsStroke.Color = Color3.fromRGB(0, 0, 0)
+		secondsStroke.Parent = secondsLabel
+		local secondsSize = Instance.new("UITextSizeConstraint")
+		secondsSize.MaxTextSize = 30
+		secondsSize.Parent = secondsLabel
+
+		local icon = {
+			ability = binding.Ability,
+			frame = frame,
+			keyLabel = keyLabel,
+			shade = shade,
+			secondsLabel = secondsLabel,
+			readyAt = 0,
+			total = 0,
+			conn = nil,
+		}
+
+		-- When the server stamps a new cooldown, remember when it ends and how long
+		-- it is. We normally hear about it the moment it starts, so "time left" IS
+		-- the full length; if the HUD rebuilds mid-cooldown (a respawn), fall back
+		-- to the Constants number so the shade fraction stays honest.
+		local attrName = "AbilityReadyAt_" .. binding.Ability
+		local function readAttribute()
+			local readyAt = localPlayer:GetAttribute(attrName)
+			if not readyAt then
+				icon.readyAt = 0
+				return
+			end
+			icon.readyAt = readyAt
+			local remaining = readyAt - workspace:GetServerTimeNow()
+			if remaining > 0 then
+				local config = Constants[characterName] and Constants[characterName][binding.Ability]
+				icon.total = math.max(remaining, (config and config.CooldownSeconds) or 0)
+			end
+		end
+		icon.conn = localPlayer:GetAttributeChangedSignal(attrName):Connect(readAttribute)
+		readAttribute()
+
+		table.insert(abilityIcons, icon)
+	end
+end
+
+-- Tick every icon's shade + number down. Runs every frame; with at most four
+-- icons this is cheap.
+RunService.Heartbeat:Connect(function()
+	for _, icon in ipairs(abilityIcons) do
+		local remaining = icon.readyAt - workspace:GetServerTimeNow()
+		if remaining > 0 and icon.total > 0 then
+			local frac = math.clamp(remaining / icon.total, 0, 1)
+			icon.shade.Size = UDim2.new(1, 0, frac, 0)
+			icon.secondsLabel.Visible = true
+			icon.secondsLabel.Text = tostring(math.ceil(remaining))
+			icon.keyLabel.TextColor3 = Color3.fromRGB(140, 140, 155)   -- grayed out
+		else
+			icon.shade.Size = UDim2.new(1, 0, 0, 0)
+			icon.secondsLabel.Visible = false
+			icon.keyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)   -- ready
+		end
+	end
+end)
+
+-- Rebuild the row whenever the server hands us a (new) character; no character
+-- (back in the lobby) clears the row entirely.
+localPlayer:GetAttributeChangedSignal("Character"):Connect(function()
+	buildAbilityIcons(localPlayer:GetAttribute("Character"))
+end)
+buildAbilityIcons(localPlayer:GetAttribute("Character"))
 
 -- Friendly display names for the character keys.
 local CHARACTER_LABEL = {

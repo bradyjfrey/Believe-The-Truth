@@ -21,6 +21,10 @@ end
 function AbilityModule.startCooldown(player, abilityName, seconds)
     cooldowns[player.UserId] = cooldowns[player.UserId] or {}
     cooldowns[player.UserId][abilityName] = tick() + seconds
+    -- Tell that player's HUD so it can gray out the ability icon and count down.
+    -- GetServerTimeNow is the SAME clock on the server and every client, so the
+    -- client can count down to this exact moment without any drift.
+    player:SetAttribute("AbilityReadyAt_" .. abilityName, workspace:GetServerTimeNow() + seconds)
 end
 
 function AbilityModule.secondsRemaining(player, abilityName)
@@ -35,6 +39,12 @@ end
 -- don't follow them into a new life.
 function AbilityModule.resetForPlayer(player)
     cooldowns[player.UserId] = nil
+    -- Clear the HUD attributes too, so no stale "recharging" icons follow them.
+    for name in pairs(player:GetAttributes()) do
+        if string.sub(name, 1, 15) == "AbilityReadyAt_" then
+            player:SetAttribute(name, nil)
+        end
+    end
 end
 
 return AbilityModule

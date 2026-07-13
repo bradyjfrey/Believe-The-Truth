@@ -18,33 +18,13 @@ local AbilityRequest = Remotes:WaitForChild("AbilityRequest")
 local NeckWrapMash = Remotes:WaitForChild("NeckWrapMash")
 
 ------------------------------------------------------------------------------
--- One row per ability we want to bind. The DisguisePickerUI script handles
--- Rokurokubi's R key on its own (so we don't list it here).
+-- The key list lives in the SHARED AbilityBindings module now, so the HUD's
+-- ability icons and these key binds always agree. Rows marked HudOnly belong
+-- to another script (e.g. DisguisePickerUI owns Rokurokubi's R) — we show
+-- them on the HUD but skip binding them here.
 ------------------------------------------------------------------------------
 
-local BINDINGS = {
-	Momotaro = {
-		{Action = "MomotaroKatana",     Ability = "Katana",      Key = Enum.KeyCode.Q, Label = "Katana"},
-		{Action = "MomotaroGuardDog",   Ability = "GuardDog",    Key = Enum.KeyCode.E, Label = "Inuta"},
-		{Action = "MomotaroMessyEater", Ability = "MessyEater",  Key = Enum.KeyCode.R, Label = "Banana"},
-		{Action = "MomotaroKibiDango",  Ability = "KibiDango",   Key = Enum.KeyCode.F, Label = "Dango"},
-	},
-	Rokurokubi = {
-		{Action = "RokurokubiNeckWrap", Ability = "NeckWrap",    Key = Enum.KeyCode.Q,                  Label = "Wrap"},
-		{Action = "RokurokubiBite",     Ability = "Bite",        Key = Enum.UserInputType.MouseButton1, Label = "Bite"},
-		-- Disguise (R) is handled by DisguisePickerUI.client.lua.
-	},
-	GirlA = {
-		{Action = "GirlASlash",        Ability = "Slash",            Key = Enum.UserInputType.MouseButton1, Label = "Slash"},
-		{Action = "GirlABreach",       Ability = "BreachOfPrivacy",  Key = Enum.KeyCode.Q,                  Label = "Breach"},
-		{Action = "GirlAStrayBlade",   Ability = "StrayBlade",       Key = Enum.KeyCode.E,                  Label = "Blade", Hold = true},
-		{Action = "GirlAIncognito",    Ability = "IncognitoMode",    Key = Enum.KeyCode.R,                  Label = "Hide"},
-	},
-	Otohime = {
-		{Action = "OtohimeHealingPulse", Ability = "HealingPulse", Key = Enum.KeyCode.E, Label = "Heal"},
-		{Action = "OtohimeDarkMoon",     Ability = "DarkMoon",     Key = Enum.KeyCode.Q, Label = "Dark Moon"},
-	},
-}
+local BINDINGS = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("AbilityBindings"))
 
 local currentActions = {}
 
@@ -61,7 +41,8 @@ local function applyBindings(characterName)
 	if not list then return end
 
 	for _, binding in ipairs(list) do
-		local action = binding.Action
+		if binding.HudOnly then continue end   -- another script owns this key
+		local action = characterName .. "_" .. binding.Ability
 		local ability = binding.Ability
 		local isHold = binding.Hold
 
