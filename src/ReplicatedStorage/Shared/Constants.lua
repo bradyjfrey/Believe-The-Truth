@@ -291,4 +291,35 @@ Constants.Otohime = {
     },
 }
 
+------------------------------------------------------------------------------
+-- Lobby whiteboard -- draw on it with the mouse while standing nearby.
+-- (Server side: WhiteboardService. Client side: Whiteboard.client.lua.)
+------------------------------------------------------------------------------
+Constants.Whiteboard = {
+    PartName = "Whiteboard",         -- the board's name in Workspace. Can be a single part OR a model (the kids'
+                                     -- Whiteboard model works: the part with the biggest flat face becomes the surface).
+    Face = "Back",                   -- which face of that part is the writing surface. The kids' board slab
+                                     -- faces the lobby with its BACK face. If drawing ever comes out mirrored
+                                     -- or invisible, flip between "Back" and "Front".
+    PixelsPerStud = 50,              -- canvas resolution (more = sharper lines, slightly more work to render)
+    DrawRangeStuds = 20,             -- how close a player must stand to draw
+    DotSizePixels = 10,              -- marker thickness
+    SendsPerSecond = 10,             -- how often a drawing player flushes stroke points to the server
+    MaxPointsPerSend = 40,           -- server safety cap: bigger batches than this are dropped
+    MaxPointsTotal = 6000,           -- the board is "full" past this; strokes are ignored until someone wipes it
+    WipeHoldSeconds = 1,             -- hold the "Wipe the board" prompt this long
+
+    -- Each player's marker color comes from this list (picked by their UserId), so
+    -- everyone's scribbles look different without needing a color-picker UI. Add or
+    -- change colors freely.
+    MarkerColors = {
+        Color3.fromRGB(30, 30, 30),      -- marker black
+        Color3.fromRGB(230, 60, 60),     -- red
+        Color3.fromRGB(60, 110, 230),    -- blue
+        Color3.fromRGB(40, 160, 80),     -- green
+        Color3.fromRGB(240, 150, 40),    -- orange
+        Color3.fromRGB(160, 70, 200),    -- purple
+    },
+}
+
 return Constants

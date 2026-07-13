@@ -28,6 +28,7 @@ local CharacterAppearance = require(ReplicatedStorage.Shared.CharacterAppearance
 local RoundService = require(ServerScriptService.Services.RoundService)
 local AbilityService = require(ServerScriptService.Services.AbilityService)
 local DisguiseService = require(ServerScriptService.Services.DisguiseService)
+local WhiteboardService = require(ServerScriptService.Services.WhiteboardService)
 -- (BleedService and EffectsService run themselves — no init needed.)
 
 local Momotaro = require(ServerScriptService.Characters.Momotaro)
@@ -68,6 +69,8 @@ local CharacterPicker       = ensureRemote("CharacterPicker", "RemoteEvent")
 local WeaponSwing           = ensureRemote("WeaponSwing", "RemoteEvent")  -- server -> all clients: "this player swung a weapon"
 local ShowHighlight         = ensureRemote("ShowHighlight", "RemoteEvent")  -- server -> ONE client: "glow this character, just on your screen"
 local PlaySound             = ensureRemote("PlaySound", "RemoteEvent")  -- server -> all clients: "play this sound (each client plays its own copy, so it's reliable)"
+local WhiteboardDraw        = ensureRemote("WhiteboardDraw", "RemoteEvent")  -- both ways: stroke points to the server, broadcast to all clients
+local WhiteboardWipe        = ensureRemote("WhiteboardWipe", "RemoteEvent")  -- server -> all clients: "clear the board"
 
 ------------------------------------------------------------------------------
 -- Wire services together
@@ -83,6 +86,10 @@ AbilityService:Init(characterModules, RoundService)
 RoundService:Init({
     AbilityService = AbilityService,
     DisguiseService = DisguiseService,
+})
+WhiteboardService:Init({
+    Draw = WhiteboardDraw,
+    Wipe = WhiteboardWipe,
 })
 
 ------------------------------------------------------------------------------
