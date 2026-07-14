@@ -108,6 +108,14 @@ local function wipe()
     wipeRemote:FireAllClients()
 end
 
+-- Public wipe, for other systems (RoundService clears the board every round
+-- start, so no lobby doodle outlives one lobby wait). Safe to call even if no
+-- board was found -- it just does nothing.
+function WhiteboardService:Wipe()
+    if not board then return end
+    wipe()
+end
+
 function WhiteboardService:Init(remotes)
     drawRemote = remotes.Draw
     wipeRemote = remotes.Wipe

@@ -83,13 +83,15 @@ local characterModules = {
     [Types.Character.Otohime]     = Otohime,
 }
 AbilityService:Init(characterModules, RoundService)
-RoundService:Init({
-    AbilityService = AbilityService,
-    DisguiseService = DisguiseService,
-})
+-- Whiteboard first, so it's ready when RoundService wants to wipe it each round.
 WhiteboardService:Init({
     Draw = WhiteboardDraw,
     Wipe = WhiteboardWipe,
+})
+RoundService:Init({
+    AbilityService = AbilityService,
+    DisguiseService = DisguiseService,
+    WhiteboardService = WhiteboardService,
 })
 
 ------------------------------------------------------------------------------

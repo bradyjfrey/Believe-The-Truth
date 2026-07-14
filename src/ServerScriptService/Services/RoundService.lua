@@ -154,6 +154,7 @@ local playerTeam = {}
 
 local abilityService = nil
 local disguiseService = nil
+local whiteboardService = nil
 
 -- EXTENSION POINT: ownership. Today every player owns every character. Later
 -- this will read from a saved profile. The shape stays the same.
@@ -182,6 +183,7 @@ end
 function RoundService:Init(deps)
 	abilityService = deps.AbilityService
 	disguiseService = deps.DisguiseService
+	whiteboardService = deps.WhiteboardService
 	self:_enterLobby()
 end
 
@@ -296,6 +298,12 @@ function RoundService:_enterRound()
 		-- Lost a player while counting down — go back to lobby.
 		self:_enterLobby()
 		return
+	end
+
+	-- Fresh round, fresh whiteboard: wipe the lobby doodles so nothing lives
+	-- longer than one lobby wait.
+	if whiteboardService then
+		whiteboardService:Wipe()
 	end
 
 	-- Pick one random Yokai player; everyone else is a Warden (survivor).
