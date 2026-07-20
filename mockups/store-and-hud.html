@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Believe the Truth — Skin Store + Cooldown HUD (mockup)</title>
+
+<!-- Grenze Gotisch is the SAME font Roblox ships (our picker uses it), so this mock is font-accurate.
+     Inter stands in for GothamBold. Offline fallbacks still look fine. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
+<style>
+  /* ----------------------------------------------------------------------
+     TUNABLES — same palette as killer-select.html, plus the store's gold.
+  ---------------------------------------------------------------------- */
+  :root {
+    --bg-darkest:   #0a0608;
+    --bg-panel:     #160d12;
+    --bg-panel-deep:#0d070a;
+    --ink:          #f3e9ec;
+    --ink-dim:      #9a8a90;
+    --blood:        #b1242b;
+    --blood-bright: #ff3b41;
+    --sky:          #2e78be;   /* warden accent */
+    --sky-bright:   #7cc0ff;
+    --gold:         #b28428;   /* omamori accent (chin fill / hover) */
+    --gold-bright:  #ffcd50;   /* labels, wallet, borders */
+    --gold-border:  #826437;   /* resting store card border */
+
+    --card-w: 210px;
+    --card-h: 268px;
+    --chin-h: 72px;
+    --card-gap: 18px;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    color: var(--ink);
+    background: var(--bg-darkest);
+  }
+  .gothic { font-family: 'Grenze Gotisch', 'Cinzel Decorative', serif; }
+
+  .section-label {
+    padding: 18px 34px 10px;
+    font-size: 13px; font-weight: 800; letter-spacing: 0.18em;
+    color: var(--ink-dim); text-transform: uppercase;
+    border-top: 1px solid #241820;
+  }
+
+  /* ======================================================================
+     SECTION 1 — THE SKIN STORE (full screen, like the picker)
+  ====================================================================== */
+  .store {
+    position: relative;
+    min-height: 700px;
+    padding-bottom: 56px;
+    overflow: hidden;
+    background:
+      radial-gradient(1100px 600px at 50% -10%, rgba(178,132,40,0.16) 0%, transparent 60%),
+      var(--bg-darkest);
+  }
+
+  .game-title {
+    position: absolute; top: 22px; left: 34px;
+    font-size: 18px; color: var(--ink-dim); letter-spacing: 0.06em;
+  }
+
+  .wallet {
+    position: absolute; top: 14px; right: 34px;
+    text-align: right;
+    font-size: 46px; line-height: 1; color: var(--gold-bright);
+  }
+  .wallet small {
+    font-family: 'Inter', sans-serif;
+    display: block; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.22em; color: var(--ink-dim);
+  }
+
+  .close-x {
+    position: absolute; top: 92px; right: 34px;
+    width: 44px; height: 44px; border-radius: 10px;
+    background: var(--bg-panel);
+    border: 2px solid var(--gold-border);
+    color: var(--ink); font-weight: 800; font-size: 18px;
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .close-x:hover { border-color: var(--gold-bright); }
+
+  .store-header { text-align: center; padding-top: 5vh; }
+  .store-header h1 { font-size: 68px; font-weight: 700; line-height: 1; }
+  .store-header h1 em { font-style: normal; color: var(--gold-bright); }
+  .store-header .sub {
+    margin-top: 8px; font-size: 13px; font-weight: 800;
+    letter-spacing: 0.14em; color: var(--gold-bright);
+  }
+
+  /* 4 columns x however many rows the catalog needs. Row 1's models still peek
+     above their cards; later rows tuck behind the row above (extra row-gap keeps
+     the peeking model from covering the chin of the card above it). */
+  .shelf-zone { position: relative; width: fit-content; margin: 64px auto 0; }
+  .shelf {
+    display: grid;
+    grid-template-columns: repeat(4, var(--card-w));
+    justify-content: center;
+    column-gap: var(--card-gap);
+    row-gap: 46px;
+  }
+
+  /* Page chevrons: bare glyphs floating beside the grid -- deliberately NOT
+     boxed, so they can't be mistaken for purchasable cards. Dim at rest,
+     bright gold + a slight grow on hover. */
+  .pager {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    color: var(--gold-border);
+    font-size: 96px; line-height: 1;
+    cursor: pointer; user-select: none;
+    text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+    transition: color 0.12s, transform 0.12s;
+  }
+  .pager:hover { color: var(--gold-bright); transform: translateY(-50%) scale(1.12); }
+  .pager.prev { left: -92px; }
+  .pager.next { right: -92px; }
+  /* page 1 = nowhere back to go: the back chevron sits faint and dead */
+  .pager.disabled { opacity: 0.22; cursor: default; }
+  .pager.disabled:hover { color: var(--gold-border); transform: translateY(-50%); }
+
+  /* "Where am I" line under the grid: dots + a small caps label. */
+  .page-line {
+    margin-top: 26px; text-align: center;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.22em;
+    color: var(--ink-dim);
+  }
+  .page-line .dots { margin-bottom: 8px; }
+  .page-line .dot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: #3a2b30; margin: 0 5px;
+  }
+  .page-line .dot.on { background: var(--gold-bright); }
+
+  .card {
+    position: relative;
+    width: var(--card-w); height: var(--card-h);
+    border-radius: var(--radius);
+    background: var(--bg-panel);
+    border: 2px solid var(--gold-border);
+    cursor: pointer;
+    transition: border-color 0.12s;
+  }
+  /* the thin inner second border, just like the picker */
+  .card::after {
+    content: ""; position: absolute; inset: 5px;
+    border: 1px solid var(--gold-border); opacity: 0.65;
+    border-radius: 9px; pointer-events: none;
+    transition: border-color 0.12s;
+  }
+
+  .portrait {
+    position: absolute; inset: 0 0 var(--chin-h) 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+    background-color: var(--bg-panel-deep);
+    background-image: url('card-stripes.png');
+    background-size: 64px 64px;
+    overflow: visible;
+    display: grid; place-items: center;
+  }
+  .portrait .question {
+    font-size: 84px; color: var(--ink-dim); opacity: 0.9;
+  }
+  /* stand-in for the spinning 3D model peeking above the card */
+  .portrait .figure {
+    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 108px; height: 232px;   /* taller than the portrait = peeks above the card top */
+    background: linear-gradient(180deg, #3a2733 0%, #221720 70%);
+    clip-path: polygon(38% 0, 62% 0, 70% 12%, 66% 28%, 78% 45%, 74% 100%, 26% 100%, 22% 45%, 34% 28%, 30% 12%);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.55));
+  }
+  .portrait .lock {
+    width: 58px; height: 58px; opacity: 0.55;
+    filter: grayscale(1) brightness(1.4);
+  }
+
+  .chin {
+    position: absolute; left: 0; right: 0; bottom: 0; height: var(--chin-h);
+    background: var(--bg-panel);
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 9px 14px 9px;
+    transition: background 0.12s;
+  }
+  .chin .row1 {
+    display: flex; justify-content: space-between;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.16em;
+    color: var(--gold-bright);
+  }
+  .chin .row2 {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-top: 2px;
+  }
+  .chin .name { font-size: 27px; line-height: 1.1; }
+  .chin .price { font-size: 21px; color: var(--gold-bright); line-height: 1.1; text-align: right; }
+  .chin .price small {
+    font-family: 'Inter', sans-serif;
+    font-size: 8px; font-weight: 800; letter-spacing: 0.14em; display: block;
+  }
+
+  /* --- card states ------------------------------------------------------ */
+  .card:hover { border-color: var(--gold-bright); }
+  .card:hover::after { border-color: var(--gold-bright); }
+  .card:hover .chin { background: var(--gold); }
+  .card:hover .chin .row1 { color: #000; }
+
+  .card.equipped { border-color: var(--gold-bright); }
+  .card.equipped::after { border-color: var(--gold-bright); }
+  .card.equipped .chin { background: var(--gold); }
+  .card.equipped .chin .row1 { color: #000; }
+
+  .card.owned { border-color: var(--gold-bright); }
+
+  /* CAN'T AFFORD YET: full-brightness card, but the gold outline turns GRAY
+     (and the price runs red). No veil -- you should still want the thing. */
+  .card.dimmed { border-color: #4a4046; }
+  .card.dimmed::after { border-color: #4a4046; }
+  .card.dimmed:hover { border-color: #4a4046; }
+  .card.dimmed:hover::after { border-color: #4a4046; }
+  .card.dimmed:hover .chin { background: var(--bg-panel); }
+  .card.dimmed:hover .chin .row1 { color: var(--gold-bright); }
+  .card.dimmed .veil { display: none; }
+  .card.dimmed .price { color: #c85050; }
+
+  /* COMING SOON: locked slot, same treatment as the picker's locked card. */
+  .card.locked { border-color: #3a2b30; cursor: default; }
+  .card.locked::after { border-color: #3a2b30; }
+  .card.locked:hover { border-color: #3a2b30; }
+  .card.locked:hover::after { border-color: #3a2b30; }
+  .card.locked:hover .chin { background: var(--bg-panel); }
+  .card.locked:hover .chin .row1 { color: var(--ink-dim); }
+  .card.locked .chin .row1 { color: var(--ink-dim); }
+  .card.locked .chin .name { color: var(--ink-dim); }
+  .card.locked .veil {
+    position: absolute; inset: 0; border-radius: var(--radius);
+    background: rgba(10,6,8,0.5); pointer-events: none;
+  }
+
+  /* ======================================================================
+     SECTION 2 — ABILITY COOLDOWN HUD, restyled to the picker language.
+     Shown over a fake "gameplay" strip. Two rows: Warden theme + Yokai theme.
+  ====================================================================== */
+  .hud-demo {
+    position: relative;
+    padding: 40px 0 56px;
+    background:
+      radial-gradient(900px 420px at 50% 120%, rgba(177,36,43,0.10) 0%, transparent 60%),
+      linear-gradient(180deg, #101010 0%, #131a12 55%, #0f130e 100%);
+  }
+  .hud-block { margin: 26px auto 0; width: fit-content; text-align: center; }
+  .hud-caption {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.2em;
+    color: var(--ink-dim); margin-bottom: 12px; text-transform: uppercase;
+  }
+
+  .ability-row { display: flex; gap: 12px; justify-content: center; }
+
+  .slot {
+    --accent: var(--sky-bright);
+    --accent-dim: #365c82;
+    position: relative;
+    width: 84px; height: 96px;
+    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 2px solid var(--accent-dim);
+    overflow: hidden;
+  }
+  .slot::after {                      /* inner second border */
+    content: ""; position: absolute; inset: 4px;
+    border: 1px solid var(--accent-dim); opacity: 0.55;
+    border-radius: 8px; pointer-events: none;
+  }
+  .slot .stripes {                    /* faint stripe tile behind the key letter */
+    position: absolute; inset: 0 0 26px 0;
+    background-image: url('card-stripes.png');
+    background-size: 48px 48px;
+    opacity: 0.5;
+  }
+  .slot .key {
+    position: absolute; top: 2px; left: 0; right: 0;
+    font-size: 44px; line-height: 1.2; text-align: center;
+    color: var(--ink);
+  }
+  .slot .label {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+    background: rgba(0,0,0,0.35);
+    font-size: 9px; font-weight: 800; letter-spacing: 0.14em;
+    color: var(--accent); text-transform: uppercase;
+    display: grid; place-items: center;
+  }
+
+  /* ready slot: accent-bright border like a hovered picker card */
+  .slot.ready { border-color: var(--accent); }
+  .slot.ready::after { border-color: var(--accent); }
+
+  /* cooling slot: dark shade drains downward + gothic seconds count */
+  .slot.cooling { }
+  .slot.cooling .shade {
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 62%;                       /* drains toward 0% as the cooldown ends */
+    background: rgba(6,3,5,0.78);
+  }
+  .slot.cooling .secs {
+    position: absolute; top: 6px; left: 0; right: 0;
+    font-size: 34px; text-align: center;
+    color: var(--accent);
+  }
+  .slot.cooling .key { opacity: 0.25; }
+
+  .yokai-row .slot { --accent: var(--blood-bright); --accent-dim: #783c44; }
+
+  .hud-timer {
+    margin-top: 20px; text-align: center;
+    font-size: 34px; color: var(--ink);
+    opacity: 0.92;
+  }
+  .hud-timer small {
+    font-family: 'Inter', sans-serif;
+    display: block; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.22em; color: var(--ink-dim);
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== THE SKIN STORE ==================== -->
+<div class="section-label">Mock 1 · The Skin Store (opens from the shop house prompt)</div>
+<section class="store">
+  <div class="game-title gothic">BELIEVE THE TRUTH</div>
+
+  <div class="wallet gothic">460<small>OMAMORI</small></div>
+  <div class="close-x">X</div>
+
+  <div class="store-header">
+    <h1 class="gothic">THE <em>YOROZUYA</em></h1>
+    <div class="sub">TEN THOUSAND THINGS, PAID IN OMAMORI</div>
+  </div>
+
+  <div class="shelf-zone">
+  <div class="pager prev disabled">&#10094;</div>
+  <div class="pager next">&#10095;</div>
+  <div class="shelf">
+    <!-- Row 1 -->
+    <!-- OWNED + EQUIPPED: gold-filled chin, no price -->
+    <div class="card equipped owned">
+      <div class="portrait"><div class="figure"></div></div>
+      <div class="chin">
+        <div class="row1"><span>COMMON</span><span>EQUIPPED</span></div>
+        <div class="row2">
+          <div class="name gothic">Night Robe</div>
+          <div class="price"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OWNED but not worn: gold border, no price -->
+    <div class="card owned">
+      <div class="portrait"><div class="figure" style="height:214px"></div></div>
+      <div class="chin">
+        <div class="row1"><span>COMMON</span><span>OWNED</span></div>
+        <div class="row2">
+          <div class="name gothic">Fox Mask</div>
+          <div class="price"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AFFORDABLE: normal resting card (hover — chin fills gold like the picker) -->
+    <div class="card">
+      <div class="portrait"><div class="figure" style="height:226px"></div></div>
+      <div class="chin">
+        <div class="row1"><span>COMMON</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Paper Charm</div>
+          <div class="price gothic">150<small>OMAMORI</small></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="portrait"><div class="figure" style="height:238px"></div></div>
+      <div class="chin">
+        <div class="row1"><span>COOL</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Token</div>
+          <div class="price gothic">400<small>OMAMORI</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="card">
+      <div class="portrait"><div class="figure" style="height:220px"></div></div>
+      <div class="chin">
+        <div class="row1"><span>COOL</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Kitsune</div>
+          <div class="price gothic">400<small>OMAMORI</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- "?" portrait = catalog entry exists, art not built yet -->
+    <div class="card">
+      <div class="portrait"><div class="question gothic">?</div></div>
+      <div class="chin">
+        <div class="row1"><span>COOL</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Oni Mask</div>
+          <div class="price gothic">400<small>OMAMORI</small></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOO EXPENSIVE: dimmed, red price -->
+    <div class="card dimmed">
+      <div class="portrait"><div class="figure" style="height:240px"></div></div>
+      <div class="chin">
+        <div class="row1"><span>RARE</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Toastful</div>
+          <div class="price gothic">900<small>OMAMORI</small></div>
+        </div>
+      </div>
+      <div class="veil"></div>
+    </div>
+
+    <div class="card dimmed">
+      <div class="portrait"><div class="question gothic">?</div></div>
+      <div class="chin">
+        <div class="row1"><span>RARE</span><span></span></div>
+        <div class="row2">
+          <div class="name gothic">Hellverse</div>
+          <div class="price gothic">900<small>OMAMORI</small></div>
+        </div>
+      </div>
+      <div class="veil"></div>
+    </div>
+
+    <!-- Row 3: COMING SOON slots -->
+    <div class="card locked">
+      <div class="portrait"><img class="lock" src="locked_1f512.png" alt="locked"></div>
+      <div class="chin">
+        <div class="row1"><span>COMING SOON</span><span></span></div>
+        <div class="row2"><div class="name gothic">??????</div><div class="price"></div></div>
+      </div>
+      <div class="veil"></div>
+    </div>
+
+    <div class="card locked">
+      <div class="portrait"><img class="lock" src="locked_1f512.png" alt="locked"></div>
+      <div class="chin">
+        <div class="row1"><span>COMING SOON</span><span></span></div>
+        <div class="row2"><div class="name gothic">??????</div><div class="price"></div></div>
+      </div>
+      <div class="veil"></div>
+    </div>
+
+    <div class="card locked">
+      <div class="portrait"><img class="lock" src="locked_1f512.png" alt="locked"></div>
+      <div class="chin">
+        <div class="row1"><span>COMING SOON</span><span></span></div>
+        <div class="row2"><div class="name gothic">??????</div><div class="price"></div></div>
+      </div>
+      <div class="veil"></div>
+    </div>
+
+    <div class="card locked">
+      <div class="portrait"><img class="lock" src="locked_1f512.png" alt="locked"></div>
+      <div class="chin">
+        <div class="row1"><span>COMING SOON</span><span></span></div>
+        <div class="row2"><div class="name gothic">??????</div><div class="price"></div></div>
+      </div>
+      <div class="veil"></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="page-line">
+    <div class="dots">
+      <span class="dot on"></span><span class="dot"></span><span class="dot"></span>
+    </div>
+    PAGE 1 OF 3
+  </div>
+</section>
+
+<!-- ==================== COOLDOWN HUD RESTYLE ==================== -->
+<div class="section-label">Mock 2 · Ability cooldown HUD, restyled to the picker look (bottom-center, above the round timer)</div>
+<section class="hud-demo">
+
+  <div class="hud-block">
+    <div class="hud-caption">Warden (Momotaro) — light blue theme · one square is mid-cooldown</div>
+    <div class="ability-row">
+      <div class="slot cooling">
+        <div class="stripes"></div>
+        <div class="key gothic">Q</div>
+        <div class="shade"></div>
+        <div class="secs gothic">14</div>
+        <div class="label">Katana</div>
+      </div>
+      <div class="slot ready">
+        <div class="stripes"></div>
+        <div class="key gothic">E</div>
+        <div class="label">Inuta</div>
+      </div>
+      <div class="slot ready">
+        <div class="stripes"></div>
+        <div class="key gothic">R</div>
+        <div class="label">Banana</div>
+      </div>
+      <div class="slot ready">
+        <div class="stripes"></div>
+        <div class="key gothic">F</div>
+        <div class="label">Dango</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-block">
+    <div class="hud-caption">Yokai (Rokurokubi) — blood red theme</div>
+    <div class="ability-row yokai-row">
+      <div class="slot ready">
+        <div class="stripes"></div>
+        <div class="key gothic">M1</div>
+        <div class="label">Bite</div>
+      </div>
+      <div class="slot cooling">
+        <div class="stripes"></div>
+        <div class="key gothic">Q</div>
+        <div class="shade" style="height:30%"></div>
+        <div class="secs gothic">8</div>
+        <div class="label">Wrap</div>
+      </div>
+      <div class="slot ready">
+        <div class="stripes"></div>
+        <div class="key gothic">R</div>
+        <div class="label">Disguise</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hud-timer gothic">3:42<small>ROUND</small></div>
+</section>
+
+</body>
+</html>

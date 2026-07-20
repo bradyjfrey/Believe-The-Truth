@@ -334,4 +334,49 @@ Constants.Whiteboard = {
     },
 }
 
+------------------------------------------------------------------------------
+-- Omamori (the earned in-game currency) + the Skin Store.
+-- The WHOLE economy lives here, per the design doc (SKIN_STORE_MONEY.md):
+-- changing "25 for a win" to "30 for a win" is a ten-second edit, not a rebuild.
+--
+-- PHASE-0 NOTE: only the store UI exists so far (StoreUI.client.lua). The Earn
+-- table below is the decided design of record but is NOT wired to gameplay yet;
+-- the UI runs on a fake session wallet (StartingOmamori) that resets every join.
+------------------------------------------------------------------------------
+Constants.Omamori = {
+    -- How you earn (NOT WIRED YET -- documented here so wiring is a lookup, not a design meeting).
+    Earn = {
+        FinishRound = 5,             -- win or lose; leaving mid-round earns nothing
+        TeamWin = 25,                -- the big one, same for both teams
+        SurviveOneMinute = 10,       -- Wardens, once per round
+        YokaiCatch = 10,             -- per Warden reduced to 0 HP
+        MoveUse = 2,                 -- per successful move (it has to do something to somebody)
+        MoveUseCapPerRound = 10,     -- anti-cheesing cap on move money
+        FirstWinOfDay = 20,          -- kids' addition
+        BossKill = 40,               -- kids' addition -- DORMANT until the hellverse boss exists
+    },
+}
+
+Constants.SkinStore = {
+    StartingOmamori = 300,           -- PHASE-0 fake wallet: enough to demo buying a Common + a Cool
+    PromptName = "SkinStorePrompt",  -- the ProximityPrompt (in the lobby store house) that opens the UI
+    ComingSoonSlots = 4,             -- locked "coming soon" cards shown after the real catalog
+
+    -- The three price tiers the kids approved.
+    Tiers = {
+        Common = { Price = 150, Label = "COMMON" },
+        Cool   = { Price = 400, Label = "COOL" },
+        Rare   = { Price = 900, Label = "RARE" },
+    },
+
+    -- What's on the shelves. ModelName = a model inside ReplicatedStorage.SkinModels
+    -- (a card shows a "?" placeholder until that model exists, so this list can lead the art).
+    -- The Common entry is an EXAMPLE for the kids to replace with a real color-swap skin.
+    Catalog = {
+        { Id = "NightRobe", DisplayName = "Night Robe", Tier = "Common", ModelName = "NightRobe" },
+        { Id = "Token",     DisplayName = "Token",      Tier = "Cool",   ModelName = "Token" },
+        { Id = "Toastful",  DisplayName = "Toastful",   Tier = "Rare",   ModelName = "Toastful" },
+    },
+}
+
 return Constants

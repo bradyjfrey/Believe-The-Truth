@@ -251,18 +251,39 @@ staminaFillCorner.Parent = staminaFill
 
 ------------------------------------------------------------------------------
 -- Bottom-center ABILITY icons -- one square per ability, sitting just above the
--- round timer. Each square shows the key ("Q") and the ability's name. While the
--- ability recharges, a dark shade covers the square and drains away, and the
--- seconds left tick down in the middle. The server stamps an
--- "AbilityReadyAt_<Name>" attribute on the player every time a cooldown starts
--- (see AbilityModule.startCooldown) -- that's all the HUD needs.
+-- round timer. Styled to match the character-picker language (2026-07-19):
+-- dark panel with a faint stripe tile, DOUBLE border, gothic key letter, and a
+-- small accent label strip -- accent color themed by team (Warden light blue,
+-- Yokai blood red). While an ability recharges, a dark shade drains away, the
+-- gothic seconds count down, and the borders drop to the dim resting color.
+-- The server stamps an "AbilityReadyAt_<Name>" attribute on the player every
+-- time a cooldown starts (see AbilityModule.startCooldown) -- that's all the
+-- HUD needs. Mockup: mockups/store-and-hud.html (Mock 2).
 ------------------------------------------------------------------------------
+
+-- The picker's look, shrunk to gameplay scale. Same stripe tile upload.
+local SLOT = {
+	width = 84, height = 96,
+	labelHeight = 26,
+	panel = Color3.fromRGB(22, 13, 18),
+	ink = Color3.fromRGB(243, 233, 236),
+	stripeImage = "rbxassetid://119070341954890",
+	stripeTile = 48,
+	titleFont = Enum.Font.GrenzeGotisch,
+	bodyFont = Enum.Font.GothamBold,
+}
+
+-- Accent per team (same hues as the picker themes).
+local SLOT_THEME = {
+	Warden = { bright = Color3.fromRGB(124, 192, 255), dim = Color3.fromRGB(54, 92, 130) },
+	Yokai  = { bright = Color3.fromRGB(255, 59, 65),   dim = Color3.fromRGB(120, 60, 68) },
+}
 
 local abilityRow = Instance.new("Frame")
 abilityRow.Name = "AbilityRow"
 abilityRow.AnchorPoint = Vector2.new(0.5, 1)
 abilityRow.Position = UDim2.new(0.5, 0, 1, -96)   -- just above the round timer
-abilityRow.Size = UDim2.fromOffset(600, 72)
+abilityRow.Size = UDim2.fromOffset(600, SLOT.height)
 abilityRow.BackgroundTransparency = 1
 abilityRow.Parent = screenGui
 
@@ -270,7 +291,7 @@ local abilityLayout = Instance.new("UIListLayout")
 abilityLayout.FillDirection = Enum.FillDirection.Horizontal
 abilityLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 abilityLayout.VerticalAlignment = Enum.VerticalAlignment.Bottom
-abilityLayout.Padding = UDim.new(0, 8)
+abilityLayout.Padding = UDim.new(0, 12)
 abilityLayout.Parent = abilityRow
 
 -- What to print on the key badge for mouse "keys".
@@ -295,71 +316,148 @@ local function buildAbilityIcons(characterName)
 	local list = characterName and AbilityBindings[characterName]
 	if not list then return end
 
+	-- Accent by team; if Team isn't set yet for some reason, Warden blue is a safe default.
+	local theme = SLOT_THEME[localPlayer:GetAttribute("Team")] or SLOT_THEME.Warden
+
 	for order, binding in ipairs(list) do
+		-- The slot itself is a transparent, UNCLIPPED container. The borders live
+		-- directly in it; everything else goes in the clipped `content` frame
+		-- below. (Clipping the borders square-cut their rounded strokes into red
+		-- corner wedges -- playtest 2026-07-19. Same structure as a picker card.)
 		local frame = Instance.new("Frame")
 		frame.Name = binding.Ability
 		frame.LayoutOrder = order
-		frame.Size = UDim2.fromOffset(72, 72)
-		frame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-		frame.BackgroundTransparency = 0.1
+		frame.Size = UDim2.fromOffset(SLOT.width, SLOT.height)
+		frame.BackgroundTransparency = 1
 		frame.BorderSizePixel = 0
 		frame.Parent = abilityRow
+
+		local content = Instance.new("Frame")
+		content.Size = UDim2.fromScale(1, 1)
+		content.BackgroundColor3 = SLOT.panel
+		content.BorderSizePixel = 0
+		content.ClipsDescendants = true
+		content.ZIndex = 1
+		content.Parent = frame
 		local corner = Instance.new("UICorner")
-		corner.CornerRadius = UDim.new(0, 10)
-		corner.Parent = frame
+		corner.CornerRadius = UDim.new(0, 12)
+		corner.Parent = content
 
-		-- Big key letter on top ("Q").
+		-- Faint stripe tile behind the key letter (same upload as the picker cards).
+		local stripes = Instance.new("ImageLabel")
+		stripes.Size = UDim2.new(1, 0, 1, -SLOT.labelHeight)
+		stripes.BackgroundTransparency = 1
+		stripes.Image = SLOT.stripeImage
+		stripes.ImageTransparency = 0.5
+		stripes.ScaleType = Enum.ScaleType.Tile
+		stripes.TileSize = UDim2.fromOffset(SLOT.stripeTile, SLOT.stripeTile)
+		stripes.ZIndex = 1
+		stripes.Parent = content
+
+		-- Big gothic key letter ("Q") over the stripes.
 		local keyLabel = Instance.new("TextLabel")
-		keyLabel.Size = UDim2.new(1, 0, 0.52, 0)
-		keyLabel.Position = UDim2.new(0, 0, 0, 4)
+		keyLabel.Size = UDim2.new(1, 0, 1, -SLOT.labelHeight)
 		keyLabel.BackgroundTransparency = 1
-		keyLabel.Font = Enum.Font.GothamBold
+		keyLabel.Font = SLOT.titleFont
 		keyLabel.TextScaled = true
-		keyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		keyLabel.TextColor3 = SLOT.ink
 		keyLabel.Text = keyText(binding.Key)
-		keyLabel.Parent = frame
+		keyLabel.ZIndex = 2
+		keyLabel.Parent = content
+		local keyMax = Instance.new("UITextSizeConstraint")
+		keyMax.MaxTextSize = 46
+		keyMax.Parent = keyLabel
 
-		-- Small ability name underneath ("Banana").
+		-- The label strip along the bottom: darkened band, accent-colored name.
+		-- Rounds its own bottom corners (the content clip is rectangular and
+		-- would let square corners poke out); the patch squares off its top edge.
+		local labelStrip = Instance.new("Frame")
+		labelStrip.AnchorPoint = Vector2.new(0, 1)
+		labelStrip.Position = UDim2.fromScale(0, 1)
+		labelStrip.Size = UDim2.new(1, 0, 0, SLOT.labelHeight)
+		labelStrip.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		labelStrip.BackgroundTransparency = 0.35
+		labelStrip.BorderSizePixel = 0
+		labelStrip.ZIndex = 2
+		labelStrip.Parent = content
+		local stripCorner = Instance.new("UICorner")
+		stripCorner.CornerRadius = UDim.new(0, 12)
+		stripCorner.Parent = labelStrip
+		local stripPatch = Instance.new("Frame")
+		stripPatch.Size = UDim2.new(1, 0, 0, 12)
+		stripPatch.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+		stripPatch.BackgroundTransparency = 0.35
+		stripPatch.BorderSizePixel = 0
+		stripPatch.ZIndex = 1
+		stripPatch.Parent = labelStrip
+
 		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, -6, 0.26, 0)
-		nameLabel.Position = UDim2.new(0, 3, 0.66, 0)
+		nameLabel.Size = UDim2.new(1, -8, 1, 0)
+		nameLabel.Position = UDim2.fromOffset(4, 0)
 		nameLabel.BackgroundTransparency = 1
-		nameLabel.Font = Enum.Font.Gotham
+		nameLabel.Font = SLOT.bodyFont
 		nameLabel.TextScaled = true
-		nameLabel.TextColor3 = Color3.fromRGB(190, 190, 205)
-		nameLabel.Text = binding.Label
-		nameLabel.Parent = frame
+		nameLabel.TextColor3 = theme.bright
+		nameLabel.Text = string.upper(binding.Label)
+		nameLabel.ZIndex = 3
+		nameLabel.Parent = labelStrip
+		local nameMax = Instance.new("UITextSizeConstraint")
+		nameMax.MaxTextSize = 11
+		nameMax.Parent = nameLabel
 
-		-- The recharge shade: covers the whole square when the cooldown starts,
-		-- then drains away (bottom edge rises) as the ability comes back.
+		-- The recharge shade: covers the square when the cooldown starts, then
+		-- drains away (bottom edge rises) as the ability comes back.
 		local shade = Instance.new("Frame")
 		shade.Size = UDim2.fromScale(1, 0)
-		shade.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-		shade.BackgroundTransparency = 0.45
+		shade.BackgroundColor3 = Color3.fromRGB(6, 3, 5)
+		shade.BackgroundTransparency = 0.22
 		shade.BorderSizePixel = 0
-		shade.ZIndex = 2
-		shade.Parent = frame
+		shade.ZIndex = 4
+		shade.Parent = content
 		local shadeCorner = Instance.new("UICorner")
-		shadeCorner.CornerRadius = UDim.new(0, 10)
+		shadeCorner.CornerRadius = UDim.new(0, 12)
 		shadeCorner.Parent = shade
 
-		-- The seconds left, centered on top of everything while recharging.
+		-- The seconds left, gothic + accent, centered in the key area while recharging.
 		local secondsLabel = Instance.new("TextLabel")
-		secondsLabel.Size = UDim2.fromScale(1, 1)
+		secondsLabel.Size = UDim2.new(1, 0, 1, -SLOT.labelHeight)
 		secondsLabel.BackgroundTransparency = 1
-		secondsLabel.Font = Enum.Font.GothamBold
+		secondsLabel.Font = SLOT.titleFont
 		secondsLabel.TextScaled = true
-		secondsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+		secondsLabel.TextColor3 = theme.bright
 		secondsLabel.Visible = false
-		secondsLabel.ZIndex = 3
-		secondsLabel.Parent = frame
+		secondsLabel.ZIndex = 5
+		secondsLabel.Parent = content
 		local secondsStroke = Instance.new("UIStroke")
 		secondsStroke.Thickness = 1.5
 		secondsStroke.Color = Color3.fromRGB(0, 0, 0)
 		secondsStroke.Parent = secondsLabel
 		local secondsSize = Instance.new("UITextSizeConstraint")
-		secondsSize.MaxTextSize = 30
+		secondsSize.MaxTextSize = 36
 		secondsSize.Parent = secondsLabel
+
+		-- DOUBLE border, exactly like a picker card: outer stroke + a thinner,
+		-- fainter inner line. Bright accent when ready, dim while recharging.
+		local function makeBorder(inset, radius, thickness, transparency, z)
+			local f = Instance.new("Frame")
+			f.AnchorPoint = Vector2.new(0.5, 0.5)
+			f.Position = UDim2.fromScale(0.5, 0.5)
+			f.Size = UDim2.new(1, -inset * 2, 1, -inset * 2)
+			f.BackgroundTransparency = 1
+			f.ZIndex = z
+			f.Parent = frame
+			local c = Instance.new("UICorner")
+			c.CornerRadius = UDim.new(0, radius)
+			c.Parent = f
+			local s = Instance.new("UIStroke")
+			s.Thickness = thickness
+			s.Color = theme.bright
+			s.Transparency = transparency
+			s.Parent = f
+			return s
+		end
+		local strokeOuter = makeBorder(0, 12, 2, 0, 6)
+		local strokeInner = makeBorder(4, 8, 1, 0.45, 7)
 
 		local icon = {
 			ability = binding.Ability,
@@ -367,6 +465,9 @@ local function buildAbilityIcons(characterName)
 			keyLabel = keyLabel,
 			shade = shade,
 			secondsLabel = secondsLabel,
+			strokeOuter = strokeOuter,
+			strokeInner = strokeInner,
+			theme = theme,
 			readyAt = 0,
 			total = 0,
 			conn = nil,
@@ -407,11 +508,15 @@ RunService.Heartbeat:Connect(function()
 			icon.shade.Size = UDim2.new(1, 0, frac, 0)
 			icon.secondsLabel.Visible = true
 			icon.secondsLabel.Text = tostring(math.ceil(remaining))
-			icon.keyLabel.TextColor3 = Color3.fromRGB(140, 140, 155)   -- grayed out
+			icon.keyLabel.TextTransparency = 0.75              -- key fades while recharging
+			icon.strokeOuter.Color = icon.theme.dim            -- borders drop to the dim resting color
+			icon.strokeInner.Color = icon.theme.dim
 		else
 			icon.shade.Size = UDim2.new(1, 0, 0, 0)
 			icon.secondsLabel.Visible = false
-			icon.keyLabel.TextColor3 = Color3.fromRGB(255, 255, 255)   -- ready
+			icon.keyLabel.TextTransparency = 0                 -- ready
+			icon.strokeOuter.Color = icon.theme.bright
+			icon.strokeInner.Color = icon.theme.bright
 		end
 	end
 end)
