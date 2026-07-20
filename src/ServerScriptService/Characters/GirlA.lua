@@ -241,6 +241,27 @@ GirlA.Abilities.StrayBlade = function(attacker, params)
         local startTime = tick()
         local done = false
 
+        -- Deal the blade's damage to one Warden and end the throw. Returns true
+        -- if the hit landed (so the flight loop knows to stop).
+        local function landHit(victim)
+            local h = getHumanoid(victim)
+            local r = getRootPart(victim)
+            if not (h and h.Health > 0) then return false end
+            h:TakeDamage(G.StrayBlade.Damage)
+            BleedService:Apply(
+                h,
+                "GirlAStrayBlade",
+                G.StrayBlade.BleedDamagePerSecond,
+                G.StrayBlade.BleedDurationSeconds,
+                1,
+                true
+            )
+            EffectsService:Play("GirlAStrayBladeImpact", r and r.Position or cleaver.Position)
+            done = true
+            if cleaver.Parent then cleaver:Destroy() end
+            return true
+        end
+
         local conn
         conn = RunService.Heartbeat:Connect(function()
             if done then
@@ -259,7 +280,7 @@ GirlA.Abilities.StrayBlade = function(attacker, params)
             local newPos = startPos + lookVector * (G.StrayBlade.RangeStuds * t)
             cleaver.CFrame = CFrame.new(newPos, newPos + lookVector)
 
-            -- Wall check: ray a short distance from old to new position.
+            -- Wall check: ray from the throw point to where the blade is now.
             local raycastParams = RaycastParams.new()
             raycastParams.FilterDescendantsInstances = {cleaver, attacker.Character}
             raycastParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -273,27 +294,20 @@ GirlA.Abilities.StrayBlade = function(attacker, params)
                     if cleaver.Parent then cleaver:Destroy() end
                     return
                 end
+                -- The blade's path passes straight through a Warden's body — that's
+                -- a hit, even if their torso center is outside the radius below.
+                if isWarden(hitPlayer) and landHit(hitPlayer) then return end
             end
 
-            -- Hit detection: any Warden within ~3 studs of the cleaver gets hit.
+            -- Hit detection: any Warden whose torso comes within HitRadiusStuds of
+            -- the blade gets hit. The radius is generous on purpose -- Girl A's tall
+            -- model throws from above a standard rig's torso height, so a tight
+            -- radius made clean-looking hits pass through (playtest 2026-07-19).
             for _, p in ipairs(Players:GetPlayers()) do
                 if isWarden(p) then
                     local r = getRootPart(p)
-                    local h = getHumanoid(p)
-                    if r and h and h.Health > 0 and (r.Position - cleaver.Position).Magnitude <= 3 then
-                        h:TakeDamage(G.StrayBlade.Damage)
-                        BleedService:Apply(
-                            h,
-                            "GirlAStrayBlade",
-                            G.StrayBlade.BleedDamagePerSecond,
-                            G.StrayBlade.BleedDurationSeconds,
-                            1,
-                            true
-                        )
-                        EffectsService:Play("GirlAStrayBladeImpact", r.Position)
-                        done = true
-                        if cleaver.Parent then cleaver:Destroy() end
-                        return
+                    if r and (r.Position - cleaver.Position).Magnitude <= G.StrayBlade.HitRadiusStuds then
+                        if landHit(p) then return end
                     end
                 end
             end

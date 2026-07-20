@@ -149,8 +149,15 @@ Constants.Momotaro = {
         CooldownSeconds = 20,
         SelfHeal = 30,
         TeammateHeal = 40,
-        TeammateRangeStuds = 5,      -- if a teammate is this close, heal them instead
+        TeammateRangeStuds = 5,      -- if a HURT teammate is this close, heal them instead
         CuresBleed = true,           -- Kibi Dango wipes out any bleed effect
+        EffectForwardStuds = 3,      -- the dango visual floats this far in front of the healed player
+        EffectUpStuds = 1,           -- ...and this far up (0,0 would bury it inside their chest)
+        EffectSideStuds = -3,        -- slide it sideways (flip the sign to switch sides)
+        EffectScale = 5,             -- the kids built it small; blow it up so it reads on screen
+        EffectTiltDegrees = 90,      -- stand the stick UPRIGHT (0 = however it was built, which
+                                     -- pointed straight out of the chest -- no thank you)
+        EffectLeanDegrees = -30,     -- casual sideways lean once upright; flip the sign to lean the other way
     },
 
     BirdsEyeView = {
@@ -210,6 +217,7 @@ Constants.Rokurokubi = {
     HiddenHunger = {
         -- Passive: when a Warden is within this range, they hear a stomach growl.
         AudibleRangeStuds = 40,
+        GrowlEverySeconds = 2,       -- how often the growl can repeat while a Warden is close
     },
 }
 
@@ -241,6 +249,10 @@ Constants.GirlA = {
         RangeStuds = 30,
         TravelSeconds = 1,
         Damage = 35,
+        HitRadiusStuds = 6,          -- how close the flying cleaver must pass to count as a hit
+                                     -- (was 3, too tight -- her tall model throws above a
+                                     -- standard rig's torso, so near-misses looked like
+                                     -- pass-throughs; playtest 2026-07-19)
         AimSlowMultiplier = 0.75,    -- -25% movement while aiming
         BleedDamagePerSecond = 1,
         BleedDurationSeconds = 8,

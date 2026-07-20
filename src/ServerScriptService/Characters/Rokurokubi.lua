@@ -316,22 +316,33 @@ end
 -- When she's within 40 studs of a Warden, that Warden hears a growl.
 ------------------------------------------------------------------------------
 function Rokurokubi:StartPassives(player)
+    -- Bootstrap calls this on EVERY spawn -- including the disguise model swaps,
+    -- which would stack a second (third, fourth...) growl loop each time. One
+    -- loop per player is plenty; the attribute flag makes extra calls harmless.
+    if player:GetAttribute("HiddenHungerRunning") then return end
+    player:SetAttribute("HiddenHungerRunning", true)
+
     task.spawn(function()
         while player:GetAttribute("Character") == Types.Character.Rokurokubi do
-            task.wait(2)
+            task.wait(R.HiddenHunger.GrowlEverySeconds)
             if player:GetAttribute("Character") ~= Types.Character.Rokurokubi then break end
             local rootPart = getRootPart(player)
             if rootPart then
+                -- Play ONE growl at her position if ANY Warden is close enough. The growl is a 3D
+                -- sound, so distance falloff decides who actually hears it -- playing it once per
+                -- nearby Warden would just stack identical growls on top of each other.
                 for _, other in ipairs(Players:GetPlayers()) do
                     if isWarden(other) then
                         local otherRoot = other.Character and other.Character:FindFirstChild("HumanoidRootPart")
                         if otherRoot and (otherRoot.Position - rootPart.Position).Magnitude <= R.HiddenHunger.AudibleRangeStuds then
-                            EffectsService:Play("RokurokubiHiddenHungerGrowl", rootPart.Position, {ListenerPlayer = other})
+                            EffectsService:Play("RokurokubiHiddenHungerGrowl", rootPart.Position)
+                            break
                         end
                     end
                 end
             end
         end
+        player:SetAttribute("HiddenHungerRunning", nil)
     end)
 end
 

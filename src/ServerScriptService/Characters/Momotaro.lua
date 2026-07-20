@@ -548,20 +548,35 @@ Momotaro.Abilities.KibiDango = function(player, params)
 
     AbilityModule.startCooldown(player, "KibiDango", M.KibiDango.CooldownSeconds)
 
-    -- Look for the nearest living Warden teammate inside the range.
+    -- Look for the nearest living Warden teammate inside the range who actually
+    -- NEEDS the dango (hurt or bleeding). A full-health friend standing close
+    -- used to soak up the heal while the presser stayed hurt (playtest 2026-07-19).
     local nearestTeammate, nearestHumanoid, nearestDistance = nil, nil, math.huge
     for _, other in ipairs(Players:GetPlayers()) do
         if other ~= player and isWarden(other) then
             local otherRoot = other.Character and other.Character:FindFirstChild("HumanoidRootPart")
             local otherHumanoid = getHumanoid(other)
             if otherRoot and otherHumanoid and otherHumanoid.Health > 0 then
+                local needsHelp = otherHumanoid.Health < otherHumanoid.MaxHealth
+                    or BleedService:IsBleeding(otherHumanoid)
                 local distance = (otherRoot.Position - rootPart.Position).Magnitude
-                if distance <= M.KibiDango.TeammateRangeStuds and distance < nearestDistance then
+                if needsHelp and distance <= M.KibiDango.TeammateRangeStuds and distance < nearestDistance then
                     nearestTeammate, nearestHumanoid, nearestDistance = other, otherHumanoid, distance
                 end
             end
         end
     end
+
+    -- The dango visual floats in FRONT of the healed player -- played dead-center
+    -- it spawns inside their chest and nobody ever sees it (playtest 2026-07-19).
+    -- Tilted upright and scaled up so it reads as a snack, not a stick poking out.
+    local effectOffset = CFrame.new(M.KibiDango.EffectSideStuds, M.KibiDango.EffectUpStuds, -M.KibiDango.EffectForwardStuds)
+        * CFrame.Angles(0, 0, math.rad(M.KibiDango.EffectLeanDegrees))
+        * CFrame.Angles(math.rad(M.KibiDango.EffectTiltDegrees), 0, 0)
+
+    -- He always eats a dango himself, so HIS bleed is cured either way; sharing
+    -- with a teammate cures theirs too.
+    if M.KibiDango.CuresBleed then BleedService:Cure(humanoid) end
 
     if nearestHumanoid then
         nearestHumanoid.Health = math.min(
@@ -569,14 +584,20 @@ Momotaro.Abilities.KibiDango = function(player, params)
             nearestHumanoid.Health + M.KibiDango.TeammateHeal
         )
         if M.KibiDango.CuresBleed then BleedService:Cure(nearestHumanoid) end
-        local pos = nearestTeammate.Character
+        local otherRoot = nearestTeammate.Character
             and nearestTeammate.Character:FindFirstChild("HumanoidRootPart")
-            and nearestTeammate.Character.HumanoidRootPart.Position
-        EffectsService:Play("MomotaroKibiDangoTeammate", pos)
+        if otherRoot then
+            EffectsService:Play("MomotaroKibiDangoTeammate", nil, {
+                CFrame = otherRoot.CFrame * effectOffset,
+                Scale = M.KibiDango.EffectScale,
+            })
+        end
     else
         humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + M.KibiDango.SelfHeal)
-        if M.KibiDango.CuresBleed then BleedService:Cure(humanoid) end
-        EffectsService:Play("MomotaroKibiDangoSelf", rootPart.Position)
+        EffectsService:Play("MomotaroKibiDangoSelf", nil, {
+            CFrame = rootPart.CFrame * effectOffset,
+            Scale = M.KibiDango.EffectScale,
+        })
     end
 end
 

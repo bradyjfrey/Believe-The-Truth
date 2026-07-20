@@ -1,8 +1,15 @@
 -- DisguiseService.lua
--- Handles Rokurokubi's Disguise ability. When she disguises, we change her
--- body to look like the chosen Warden using Roblox's HumanoidDescription
--- system, and we swap her displayed name. When the disguise drops, we put
--- everything back the way it was.
+-- Handles Rokurokubi's Disguise ability. When she disguises, we swap her whole
+-- character for a clone of the target Warden's dressed model (the same
+-- StarterCharacter trick RoundService uses for round spawns), keeping her
+-- health and position, and wear the target's display name. When the disguise
+-- drops, we swap her back to her own Rokurokubi model the same way.
+--
+-- WHY NOT HumanoidDescription? The old version used ApplyDescription, which
+-- only works on standard Roblox rigs. Our dressed models are hand-built, so
+-- the call errored and she never visibly changed (playtest 2026-07-19). The
+-- model swap also copies what the target ACTUALLY looks like in-game (their
+-- dressed model), not their roblox.com avatar.
 --
 -- The disguise can drop because:
 --   * The 19-second timer ran out (Rokurokubi.lua)
@@ -13,93 +20,140 @@
 --   * The round ended (RoundService calls DropAll)
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local DisguiseService = {}
 
--- active[rokurokubiPlayer] = {
---   description = original HumanoidDescription,
---   displayName = original DisplayName,
---   target = the Warden player she copied,
---   healthConn = the HealthChanged connection (so we can disconnect it),
---   startHealth = her health when the disguise started,
--- }
+-- active[rokurokubiPlayer] = {target = the Warden she copied, healthConn = connection}
 local active = {}
 
 function DisguiseService:IsDisguised(player)
-    return active[player] ~= nil
+	return active[player] ~= nil
 end
 
 function DisguiseService:GetCopiedTarget(player)
-    return active[player] and active[player].target or nil
+	return active[player] and active[player].target or nil
+end
+
+------------------------------------------------------------------------------
+-- The StarterCharacter swap trick (borrowed from RoundService.spawnPlayerAt):
+-- drop the model into StarterPlayer.StarterCharacter, LoadCharacter, then
+-- clean up. Roblox still injects the default Animate + StarterCharacterScripts
+-- + camera/controls for us -- things a bare "player.Character = clone" would not.
+------------------------------------------------------------------------------
+local function swapToModel(player, sourceModel, atCFrame)
+	local template = sourceModel:Clone()
+	template.Name = "StarterCharacter"
+	template:SetAttribute("Dressed", true)   -- Bootstrap skips the placeholder recolor
+	local existing = StarterPlayer:FindFirstChild("StarterCharacter")
+	if existing then existing:Destroy() end
+	template.Parent = StarterPlayer
+
+	local ok, err = pcall(function() player:LoadCharacter() end)
+
+	-- Let Roblox finish injecting Animate before removing the template
+	-- (destroying it immediately races the injection -- frozen arms/legs).
+	local spawned = player.Character
+	if spawned then spawned:WaitForChild("Animate", 3) end
+
+	local used = StarterPlayer:FindFirstChild("StarterCharacter")
+	if used then used:Destroy() end
+	if not ok then
+		warn("[DisguiseService] model swap failed: " .. tostring(err))
+		return nil
+	end
+	if spawned and atCFrame then
+		local root = spawned:WaitForChild("HumanoidRootPart", 5)
+		if root then spawned:PivotTo(atCFrame) end
+	end
+	return spawned
+end
+
+-- Swap the player's model while keeping where they stand and how hurt they are.
+-- Returns the new character + humanoid, or nil if the swap failed.
+local function swapKeepingSelf(player, sourceModel)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return nil end
+	local savedCFrame = character:GetPivot()
+	local savedHealth = humanoid.Health
+
+	local newCharacter = swapToModel(player, sourceModel, savedCFrame)
+	if not newCharacter then return nil end
+
+	-- Bootstrap re-applies her stats on the fresh body (CharacterAdded), which
+	-- fills health to max. Give that a beat to finish, then put her REAL health
+	-- back so disguising is never a free full heal.
+	task.wait(0.2)
+	local newHumanoid = newCharacter:FindFirstChildOfClass("Humanoid")
+	if newHumanoid then
+		newHumanoid.Health = math.min(savedHealth, newHumanoid.MaxHealth)
+	end
+	return newCharacter, newHumanoid
 end
 
 function DisguiseService:Apply(rokurokubiPlayer, targetWardenPlayer)
-    local character = rokurokubiPlayer.Character
-    if not character then return false end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return false end
+	if active[rokurokubiPlayer] then return false end
 
-    -- Save the originals so we can restore them on drop.
-    local originalDesc = humanoid:GetAppliedDescription()
-    local originalDisplayName = humanoid.DisplayName
+	-- Which dressed model to copy: the target's CHARACTER (Momotaro, Otohime...),
+	-- pulled from the same CharacterModels folder the round spawn uses.
+	local targetKey = targetWardenPlayer:GetAttribute("Character")
+	local models = ReplicatedStorage:FindFirstChild("CharacterModels")
+	local source = targetKey and models and models:FindFirstChild(targetKey)
+	if not source then
+		warn("[DisguiseService] no CharacterModels model for " .. tostring(targetKey))
+		return false
+	end
 
-    -- Pull the target's appearance. This calls Roblox's web service, so wrap
-    -- in pcall in case of network hiccups.
-    local ok, targetDesc = pcall(function()
-        return Players:GetHumanoidDescriptionFromUserId(targetWardenPlayer.UserId)
-    end)
-    if not ok or not targetDesc then
-        warn("DisguiseService: failed to fetch HumanoidDescription for " .. targetWardenPlayer.Name)
-        return false
-    end
+	local newCharacter, newHumanoid = swapKeepingSelf(rokurokubiPlayer, source)
+	if not newCharacter or not newHumanoid then return false end
 
-    humanoid:ApplyDescription(targetDesc)
-    humanoid.DisplayName = targetWardenPlayer.DisplayName
+	-- Wear the target's name too.
+	newHumanoid.DisplayName = targetWardenPlayer.DisplayName
 
-    -- Watch for any damage. Taking ANY damage breaks the disguise (per spec).
-    local startHealth = humanoid.Health
-    local healthConn
-    healthConn = humanoid.HealthChanged:Connect(function(newHealth)
-        if newHealth < startHealth - 0.01 then
-            DisguiseService:Drop(rokurokubiPlayer)
-        end
-    end)
+	-- Taking ANY damage breaks the disguise (per spec). Hooked AFTER the health
+	-- restore above so the restore itself doesn't count as damage.
+	local startHealth = newHumanoid.Health
+	local healthConn
+	healthConn = newHumanoid.HealthChanged:Connect(function(newHealth)
+		if newHealth < startHealth - 0.01 then
+			DisguiseService:Drop(rokurokubiPlayer)
+		end
+	end)
 
-    active[rokurokubiPlayer] = {
-        description = originalDesc,
-        displayName = originalDisplayName,
-        target = targetWardenPlayer,
-        healthConn = healthConn,
-        startHealth = startHealth,
-    }
-
-    -- Tell the client(s) so any UI knows she's disguised.
-    rokurokubiPlayer:SetAttribute("Disguised", true)
-    return true
+	active[rokurokubiPlayer] = {target = targetWardenPlayer, healthConn = healthConn}
+	rokurokubiPlayer:SetAttribute("Disguised", true)
+	return true
 end
 
 function DisguiseService:Drop(rokurokubiPlayer)
-    local state = active[rokurokubiPlayer]
-    if not state then return end
+	local state = active[rokurokubiPlayer]
+	if not state then return end
+	-- Clear the state FIRST so the health watcher can't re-enter Drop mid-swap.
+	active[rokurokubiPlayer] = nil
+	if state.healthConn then state.healthConn:Disconnect() end
+	rokurokubiPlayer:SetAttribute("Disguised", nil)
 
-    if state.healthConn then state.healthConn:Disconnect() end
+	-- If she's dead, don't swap -- LoadCharacter would resurrect her. The round
+	-- flow owns dead players.
+	local character = rokurokubiPlayer.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return end
 
-    local character = rokurokubiPlayer.Character
-    if character then
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid:ApplyDescription(state.description)
-            humanoid.DisplayName = state.displayName
-        end
-    end
-    active[rokurokubiPlayer] = nil
-    rokurokubiPlayer:SetAttribute("Disguised", nil)
+	local models = ReplicatedStorage:FindFirstChild("CharacterModels")
+	local source = models and models:FindFirstChild("Rokurokubi")
+	if not source then
+		warn("[DisguiseService] CharacterModels.Rokurokubi missing -- cannot swap back")
+		return
+	end
+	swapKeepingSelf(rokurokubiPlayer, source)
 end
 
 function DisguiseService:DropAll()
-    for player in pairs(active) do
-        self:Drop(player)
-    end
+	for player in pairs(active) do
+		self:Drop(player)
+	end
 end
 
 return DisguiseService

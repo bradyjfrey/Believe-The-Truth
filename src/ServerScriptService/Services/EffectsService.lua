@@ -40,6 +40,7 @@ local LIFETIMES = {
 	GirlASlashHit = 0.8,
 	OtohimeHealingPulse = 2.5,
 	OtohimeDarkMoon = 3,
+	RokurokubiHiddenHungerGrowl = 4,   -- sound-only; long enough that the growl isn't cut off
 }
 
 -- The folder all templates live in. Looked up lazily so this module loads cleanly at startup.

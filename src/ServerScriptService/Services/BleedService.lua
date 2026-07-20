@@ -62,6 +62,12 @@ function BleedService:Cure(humanoid)
     bleeds[humanoid] = nil
 end
 
+-- Is this humanoid currently bleeding from anything? (Kibi Dango uses this to
+-- decide whether a full-health teammate still needs the dango.)
+function BleedService:IsBleeding(humanoid)
+    return bleeds[humanoid] ~= nil
+end
+
 -- Tick once per second. Sum up all active bleeds per humanoid and apply.
 local accumulator = 0
 RunService.Heartbeat:Connect(function(dt)

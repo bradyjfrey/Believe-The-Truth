@@ -1,5 +1,8 @@
 -- ROKUROKUBI NECK WAVE.
--- WHERE IT GOES: a LocalScript in StarterPlayer > StarterCharacterScripts.
+-- ⚠️ RETIRED 2026-07-19: replaced by src/StarterPlayer/StarterPlayerScripts/NeckWave.client.lua.
+-- As a StarterCharacterScripts LocalScript this only ran on Roro's OWN client, so nobody else
+-- ever saw the wave. Kept for reference only -- do not paste into Studio.
+-- WHERE IT WENT: a LocalScript in StarterPlayer > StarterCharacterScripts.
 -- Drives the segmented neck (NeckJoint1..N) in a traveling wave.
 --
 -- Animates each joint's C0 (not Transform) -- on a player's own character the animation system
