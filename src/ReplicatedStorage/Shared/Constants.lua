@@ -17,6 +17,7 @@ Constants.Round = {
     LobbyTimeSeconds = 20,           -- countdown before a round auto-starts
     RoundLengthSeconds = 3 * 60,     -- if Wardens survive this long, they win
     EndOfRoundDelaySeconds = 5,      -- pause after a round before going back to lobby
+    EliminatedRespawnSeconds = 3,    -- how long a caught player lies there before waking up in the lobby
 }
 
 ------------------------------------------------------------------------------
@@ -230,7 +231,11 @@ Constants.GirlA = {
     Slash = {
         -- Bound to left-mouse-button.
         CooldownSeconds = 1.5,
-        RangeStuds = 10,
+        RangeStuds = 12,             -- how far ahead the swing reaches
+        SwingWidthStuds = 6,         -- how far to EACH side of her the swing still counts
+        PassThroughGraceStuds = 4,   -- targets this far BEHIND her still count -- she lunges
+                                     -- forward before the hit check, so without this a
+                                     -- point-blank swing lunges PAST the victim and whiffs
         Damage = 15,
         LungeStuds = 4,              -- small forward step per spec ("lunges forward slightly")
     },

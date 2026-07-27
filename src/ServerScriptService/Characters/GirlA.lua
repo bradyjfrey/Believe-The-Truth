@@ -40,15 +40,19 @@ end
 
 local function isWarden(player) return player:GetAttribute("Team") == Types.Team.Warden end
 
--- Find Wardens in front of `attackerRoot` (used by Slash).
-local function findWardensInFront(attackerRoot, forwardStuds, sideStuds)
+-- Find Wardens caught in the swing (used by Slash). "In the swing" means: no further than
+-- forwardStuds ahead, no further than sideStuds to either side, and -- because she lunges
+-- forward BEFORE this check runs -- up to behindStuds behind her still counts, so a
+-- point-blank swing that lunges past the victim doesn't whiff.
+local function findWardensInFront(attackerRoot, forwardStuds, sideStuds, behindStuds)
     local hits = {}
     for _, p in ipairs(Players:GetPlayers()) do
         if isWarden(p) then
             local r = getRootPart(p)
             if r then
                 local relative = attackerRoot.CFrame:PointToObjectSpace(r.Position)
-                if relative.Z < 0 and -relative.Z <= forwardStuds and math.abs(relative.X) <= sideStuds then
+                -- Negative Z = in front of her, positive Z = behind her.
+                if relative.Z <= behindStuds and -relative.Z <= forwardStuds and math.abs(relative.X) <= sideStuds then
                     table.insert(hits, p)
                 end
             end
@@ -103,7 +107,8 @@ GirlA.Abilities.Slash = function(attacker, params)
     local lookVector = attackerRoot.CFrame.LookVector
     attackerRoot.CFrame = attackerRoot.CFrame + lookVector * G.Slash.LungeStuds
 
-    local hits = findWardensInFront(attackerRoot, G.Slash.RangeStuds, 4)
+    local hits = findWardensInFront(attackerRoot, G.Slash.RangeStuds,
+        G.Slash.SwingWidthStuds, G.Slash.PassThroughGraceStuds)
     for _, victim in ipairs(hits) do
         local h = getHumanoid(victim)
         local r = getRootPart(victim)

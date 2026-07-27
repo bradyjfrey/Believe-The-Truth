@@ -71,11 +71,20 @@ end
 -- doesn't pile up on the exact same point.
 local SPAWN_SCATTER = 6
 
--- Find a marker Part anywhere in the Workspace by its (unique) name.
+-- Find a spawn marker Part by name and return its CFrame. The art team can place ONE
+-- marker (works like it always did) or SEVERAL parts with the SAME name spread around an
+-- area -- every call picks one of them at random, so players spawn around the general
+-- area instead of piling onto one exact spot. (SPAWN_SCATTER still nudges each player a
+-- few studs on top of that.)
 local function markerCFrame(name, fallback)
-	local marker = workspace:FindFirstChild(name, true)
-	if marker and marker:IsA("BasePart") then
-		return marker.CFrame
+	local matches = {}
+	for _, d in ipairs(workspace:GetDescendants()) do
+		if d.Name == name and d:IsA("BasePart") then
+			table.insert(matches, d)
+		end
+	end
+	if #matches > 0 then
+		return matches[rng:NextInteger(1, #matches)].CFrame
 	end
 	warn("[RoundService] spawn marker '" .. name .. "' not found - using a fallback spot")
 	return fallback
@@ -234,6 +243,52 @@ function RoundService:OnPlayerJoined(player)
 end
 
 ------------------------------------------------------------------------------
+-- Elimination: what happens when you die mid-round
+------------------------------------------------------------------------------
+
+-- Dying mid-round takes you OUT of that round (no respawning back into the map).
+-- After a short pause on the ground, you wake up in the lobby as your normal
+-- avatar and can hang out / browse the store until the next round pulls you in.
+--
+-- We forget the player's team + character the moment they die, so:
+--   * _checkWinConditions stops counting them (a dead Warden in the lobby must
+--     NOT count as "alive" or the round would never end),
+--   * abilities and passives (growl range, highlights, etc.) ignore them.
+-- The "Eliminated" attribute is for UIs that want to react (e.g. a future
+-- "you're out - next round soon" message). Cleared when the lobby state starts.
+local function watchForElimination(player)
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+
+	humanoid.Died:Connect(function()
+		if state ~= Types.RoundState.InRound then return end
+
+		-- Out of this round: forget who they were so nothing targets or counts them.
+		playerTeam[player.UserId] = nil
+		playerCharacter[player.UserId] = nil
+		if abilityService then abilityService:Clear(player) end
+		player:SetAttribute("Eliminated", true)
+		player:SetAttribute("Team", nil)
+		player:SetAttribute("Character", nil)
+		player:SetAttribute("Wrapped", nil)
+		player:SetAttribute("BeingStrangled", nil)
+		player:SetAttribute("Incognito", nil)
+		player:SetAttribute("Disguised", nil)
+		player:SetAttribute("BreachPopupActive", nil)
+
+		-- Let the death land on screen for a moment, then off to the lobby.
+		task.delay(Constants.Round.EliminatedRespawnSeconds, function()
+			-- If the round ended while they were lying there, _enterLobby already
+			-- respawns everyone -- don't double-spawn. Same if they left the game.
+			if state ~= Types.RoundState.InRound then return end
+			if player.Parent ~= Players then return end
+			spawnPlayerAt(player, markerCFrame("LobbySpawn", CFrame.new(0, 10, 0)))
+		end)
+	end)
+end
+
+------------------------------------------------------------------------------
 -- State transitions
 ------------------------------------------------------------------------------
 
@@ -256,6 +311,7 @@ function RoundService:_enterLobby()
 		if abilityService then abilityService:Clear(player) end
 		player:SetAttribute("Team", nil)
 		player:SetAttribute("Character", nil)
+		player:SetAttribute("Eliminated", nil)
 		player:SetAttribute("Wrapped", nil)
 		player:SetAttribute("BeingStrangled", nil)
 		player:SetAttribute("Incognito", nil)
@@ -268,10 +324,10 @@ function RoundService:_enterLobby()
 	-- and the character keeps its round styling in the lobby.
 	task.wait()
 
-	-- Respawn everyone back in the lobby to hang out while waiting.
-	local lobbyCFrame = markerCFrame("LobbySpawn", CFrame.new(0, 10, 0))
+	-- Respawn everyone back in the lobby to hang out while waiting. Each player rolls
+	-- their own marker (there may be several named LobbySpawn) so they don't pile up.
 	for _, player in ipairs(Players:GetPlayers()) do
-		spawnPlayerAt(player, lobbyCFrame)
+		spawnPlayerAt(player, markerCFrame("LobbySpawn", CFrame.new(0, 10, 0)))
 	end
 
 	-- Clean up any hotspots from last round.
@@ -340,8 +396,7 @@ function RoundService:_enterRound()
 
 	-- Assign teams + characters and respawn (fresh HP) at the team's spot in Map 1.
 	-- The killer (Yokai) starts in the red area, survivors (Wardens) in the blue area.
-	local wardenCFrame = markerCFrame("WardenSpawn", CFrame.new(0, 50, 0))
-	local yokaiCFrame = markerCFrame("YokaiSpawn", CFrame.new(40, 50, 0))
+	-- markerCFrame is called PER PLAYER so each one rolls their own random marker.
 	for _, player in ipairs(players) do
 		-- Safety net: if a pick thread didn't finish (e.g. the player left), fall back sensibly.
 		if not playerCharacter[player.UserId] then
@@ -352,8 +407,11 @@ function RoundService:_enterRound()
 		player:SetAttribute("Team", playerTeam[player.UserId])
 		player:SetAttribute("Character", playerCharacter[player.UserId])
 		abilityService:SetCharacter(player, playerCharacter[player.UserId])
-		local spawnAt = (playerTeam[player.UserId] == Types.Team.Yokai) and yokaiCFrame or wardenCFrame
+		local spawnAt = (playerTeam[player.UserId] == Types.Team.Yokai)
+			and markerCFrame("YokaiSpawn", CFrame.new(40, 50, 0))
+			or markerCFrame("WardenSpawn", CFrame.new(0, 50, 0))
 		spawnPlayerAt(player, spawnAt, playerCharacter[player.UserId])
+		watchForElimination(player)
 	end
 
 	-- Spawn placeholder Hotspots so Girl A's Incognito teleport works.
