@@ -534,6 +534,11 @@ local CHARACTER_LABEL = {
 	Rokurokubi = "Rokurokubi",
 	GirlA      = "Girl A",
 	Otohime    = "Otohime",
+	Okiku      = "Okiku",
+	Tomino     = "Tomino",
+	TwoTimePrime = "Two Time Prime",
+	Verity     = "Verity",
+	Bobzilla   = "Bobzilla",
 }
 
 -- Colors so the role badge feels different per team.

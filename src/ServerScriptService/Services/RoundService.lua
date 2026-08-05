@@ -11,11 +11,13 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ServerScriptService = game:GetService("ServerScriptService")
 local SoundService = game:GetService("SoundService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
+local EffectsService = require(ServerScriptService.Services.EffectsService)
 
 local RoundService = {}
 
@@ -97,6 +99,11 @@ local DRESSED_ENABLED = {
 	GirlA      = true,
 	Rokurokubi = true,
 	Otohime    = true,   -- 2nd survivor; model lives in CharacterModels. Reachable once the survivor picker assigns her.
+	Okiku      = true,
+	Tomino     = true,
+	TwoTimePrime = true,
+	Verity     = true,
+	Bobzilla   = true,
 }
 
 -- Spawn the player and drop them at `baseCFrame` (a few studs up so they don't clip into the
@@ -115,6 +122,11 @@ local function spawnPlayerAt(player, baseCFrame, characterKey)
 		local template = source:Clone()
 		template.Name = "StarterCharacter"
 		template:SetAttribute("Dressed", true)   -- Bootstrap skips the placeholder recolor when set
+
+		local templateHumanoid = template:FindFirstChildOfClass("Humanoid")
+		if templateHumanoid and templateHumanoid.RigType == Enum.HumanoidRigType.R15 then
+			templateHumanoid.AutomaticScalingEnabled = false
+		end
 		local existing = StarterPlayer:FindFirstChild("StarterCharacter")
 		if existing then existing:Destroy() end
 		template.Parent = StarterPlayer
@@ -149,7 +161,17 @@ local function spawnPlayerAt(player, baseCFrame, characterKey)
 	end
 	local ox = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
 	local oz = (rng:NextNumber() - 0.5) * 2 * SPAWN_SCATTER
-	character:PivotTo(baseCFrame * CFrame.new(ox, 3, oz))
+
+	-- Lift by the ROOT-TO-FEET distance so the character's feet land just above the
+	-- marker, not its root. A flat +3 buries anything whose root sits high (Bobzilla's
+	-- is ~22 studs up), which sinks it into the map and physics launches it out of bounds.
+	local boxCFrame, boxSize = character:GetBoundingBox()
+	local bottomY = boxCFrame.Position.Y - boxSize.Y / 2
+	local rootLift = math.max(root.Position.Y - bottomY, 0) + 3
+	-- Set the ROOT directly rather than PivotTo. A model's pivot can sit far from its own
+	-- body (Bobzilla's was ~1220 studs away, which flung him a thousand studs into the sky),
+	-- and everything is welded or jointed to the root anyway, so moving it moves the lot.
+	root.CFrame = baseCFrame * CFrame.new(ox, rootLift, oz)
 end
 
 local state = Types.RoundState.Lobby
@@ -177,6 +199,10 @@ local function yokaiOptionsFor(player)
 	local opts = {}
 	if ownsCharacter(player, Types.Character.Rokurokubi) then table.insert(opts, Types.Character.Rokurokubi) end
 	if ownsCharacter(player, Types.Character.GirlA) then table.insert(opts, Types.Character.GirlA) end
+	if ownsCharacter(player, Types.Character.Okiku) then table.insert(opts, Types.Character.Okiku) end
+	if ownsCharacter(player, Types.Character.Tomino) then table.insert(opts, Types.Character.Tomino) end
+	if ownsCharacter(player, Types.Character.Verity) then table.insert(opts, Types.Character.Verity) end
+	if ownsCharacter(player, Types.Character.Bobzilla) then table.insert(opts, Types.Character.Bobzilla) end
 	if #opts == 0 then table.insert(opts, Types.Character.Rokurokubi) end
 	return opts
 end
@@ -185,6 +211,7 @@ local function survivorOptionsFor(player)
 	local opts = {}
 	if ownsCharacter(player, Types.Character.Momotaro) then table.insert(opts, Types.Character.Momotaro) end
 	if ownsCharacter(player, Types.Character.Otohime) then table.insert(opts, Types.Character.Otohime) end
+	if ownsCharacter(player, Types.Character.TwoTimePrime) then table.insert(opts, Types.Character.TwoTimePrime) end
 	if #opts == 0 then table.insert(opts, Types.Character.Momotaro) end
 	return opts
 end
@@ -263,6 +290,9 @@ local function watchForElimination(player)
 
 	humanoid.Died:Connect(function()
 		if state ~= Types.RoundState.InRound then return end
+
+		local deathRoot = character:FindFirstChild("HumanoidRootPart")
+		EffectsService:Play("PlayerKilled", deathRoot and deathRoot.Position)
 
 		-- Out of this round: forget who they were so nothing targets or counts them.
 		playerTeam[player.UserId] = nil
@@ -407,9 +437,12 @@ function RoundService:_enterRound()
 		player:SetAttribute("Team", playerTeam[player.UserId])
 		player:SetAttribute("Character", playerCharacter[player.UserId])
 		abilityService:SetCharacter(player, playerCharacter[player.UserId])
-		local spawnAt = (playerTeam[player.UserId] == Types.Team.Yokai)
-			and markerCFrame("YokaiSpawn", CFrame.new(40, 50, 0))
-			or markerCFrame("WardenSpawn", CFrame.new(0, 50, 0))
+		local isYokai = (playerTeam[player.UserId] == Types.Team.Yokai)
+		local teamMarker = isYokai and "YokaiSpawn" or "WardenSpawn"
+		local fallback = isYokai and CFrame.new(40, 50, 0) or CFrame.new(0, 50, 0)
+		local ownMarker = tostring(playerCharacter[player.UserId]) .. "Spawn"
+		local hasOwn = workspace:FindFirstChild(ownMarker, true) ~= nil
+		local spawnAt = markerCFrame(hasOwn and ownMarker or teamMarker, fallback)
 		spawnPlayerAt(player, spawnAt, playerCharacter[player.UserId])
 		watchForElimination(player)
 	end

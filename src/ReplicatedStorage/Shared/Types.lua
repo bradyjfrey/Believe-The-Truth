@@ -14,6 +14,11 @@ Types.Character = {
     Otohime = "Otohime",
     Rokurokubi = "Rokurokubi",
     GirlA = "GirlA",
+    Okiku = "Okiku",
+    Tomino = "Tomino",
+    TwoTimePrime = "TwoTimePrime",
+    Verity = "Verity",
+    Bobzilla = "Bobzilla",
 }
 
 -- Which team each character belongs to.
@@ -22,6 +27,11 @@ Types.CharacterTeam = {
     Otohime = Types.Team.Warden,
     Rokurokubi = Types.Team.Yokai,
     GirlA = Types.Team.Yokai,
+    Okiku = Types.Team.Yokai,
+    Tomino = Types.Team.Yokai,
+    TwoTimePrime = Types.Team.Warden,
+    Verity = Types.Team.Yokai,
+    Bobzilla = Types.Team.Yokai,
 }
 
 Types.RoundState = {

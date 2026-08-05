@@ -23,6 +23,8 @@ local localPlayer    = Players.LocalPlayer
 local Remotes        = ReplicatedStorage:WaitForChild("Remotes")
 local CharacterPicker = Remotes:WaitForChild("CharacterPicker")
 
+local Constants = require(ReplicatedStorage.Shared.Constants)
+
 ----------------------------------------------------------------------------------------------------
 -- TUNABLES — change these first; everything else follows from them.
 -- (Same idea as the :root variables at the top of the HTML mockup.)
@@ -37,6 +39,10 @@ local CONFIG = {
 	cardWidth  = 300,
 	cardHeight = 380,   -- portrait area; the chin (name strip) is added below this
 	cardGap    = 28,
+
+	rowSideMargin = 40,
+	minRowScale   = 0.45,
+	minColumns    = 3,
 
 	-- How far the 3D model is allowed to poke ABOVE the top of the card (pixels).
 	avatarPeek = 70,
@@ -109,8 +115,22 @@ local THEMES = {
 		border       = Color3.fromRGB(54, 92, 130),    -- bluish resting border
 	},
 }
+local DEV_THEME = {
+	roleWord     = "DEVELOPER MODE",
+	accent       = Color3.fromRGB(190, 150, 20),
+	accentBright = Color3.fromRGB(255, 214, 64),
+	border       = Color3.fromRGB(150, 120, 30),
+}
+
 -- The theme in force for the screen that's currently open. open() sets this before building cards.
 local activeTheme = THEMES.Yokai
+
+local function themeForCard(characterKey)
+	if characterKey and Constants.DeveloperOnlyCharacters[characterKey] then
+		return DEV_THEME
+	end
+	return activeTheme
+end
 
 -- Display names per character key (the key "GirlA" should read "Girl A").
 local LABELS = {
@@ -118,6 +138,11 @@ local LABELS = {
 	Otohime    = "Otohime",
 	Rokurokubi = "Rokurokubi",
 	GirlA      = "Girl A",
+	Okiku      = "Okiku",
+	Tomino     = "Tomino",
+	TwoTimePrime = "Two Time Prime",
+	Verity     = "Verity",
+	Bobzilla   = "Bobzilla",
 }
 
 -- Per-character framing tweaks on top of the automatic fit.
@@ -125,13 +150,21 @@ local LABELS = {
 --   drop: studs to shift the model DOWN in the box (raises the camera's look point).
 --   face: degrees to turn the model so its FRONT points at the camera (some models were built
 --         facing the other way). 180 = spin it halfway around.
+--   shift: studs to slide the framing sideways. Positive moves the model LEFT in the box, negative
+--         moves it RIGHT. Needed when props stick out one side (Tomino's chain) and drag the
+--         auto-fit box off the body.
 local CAMERA = {
 	GirlA      = { zoom = 1.15, drop = 0 },    -- a touch smaller
-	Rokurokubi = { zoom = 0.7,  drop = 0.8 },  -- bigger, and nudged down
+	Rokurokubi = { zoom = 0.7,  drop = 2 },  -- bigger, and nudged down
 	Momotaro   = { zoom = 1.0,  drop = 0 },
 	Otohime    = { zoom = 1.0,  drop = 0, face = 180 },  -- built facing away; turn her to face us
+	Okiku      = { zoom = 0.7,  drop = 0.5 },
+	Tomino     = { zoom = 1.0,  drop = 0, shift = -2 },
+	TwoTimePrime = { zoom = 1.0, drop = 0 },
+	Verity     = { zoom = 1.0, drop = 0, face = 180 },
+	Bobzilla   = { zoom = 1.0, drop = 0 },
 }
-local DEFAULT_CAM = { zoom = 1.0, drop = 0, face = 0 }
+local DEFAULT_CAM = { zoom = 1.0, drop = 0, face = 0, shift = 0 }
 
 ----------------------------------------------------------------------------------------------------
 -- Build the parts of the screen that never change (backdrop, title, countdown).
@@ -229,13 +262,50 @@ cardRow.BackgroundTransparency = 1
 cardRow.ClipsDescendants = false  -- let avatars peek above the cards
 cardRow.Parent = backdrop
 
-local rowLayout = Instance.new("UIListLayout")
-rowLayout.FillDirection = Enum.FillDirection.Horizontal
-rowLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-rowLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-rowLayout.Padding = UDim.new(0, CONFIG.cardGap)
-rowLayout.SortOrder = Enum.SortOrder.LayoutOrder
-rowLayout.Parent = cardRow
+local grid = Instance.new("UIGridLayout")
+grid.CellSize = UDim2.fromOffset(CONFIG.cardWidth, CONFIG.cardHeight)
+grid.CellPadding = UDim2.fromOffset(CONFIG.cardGap, CONFIG.cardGap + CONFIG.avatarPeek)
+grid.HorizontalAlignment = Enum.HorizontalAlignment.Center
+grid.VerticalAlignment = Enum.VerticalAlignment.Center
+grid.SortOrder = Enum.SortOrder.LayoutOrder
+grid.Parent = cardRow
+
+local rowScale = Instance.new("UIScale")
+rowScale.Parent = cardRow
+
+local cardCount = 0
+
+local function relayout()
+	if cardCount <= 0 then return end
+
+	local availableW = backdrop.AbsoluteSize.X - CONFIG.rowSideMargin * 2
+	local availableH = backdrop.AbsoluteSize.Y - CONFIG.rowSideMargin * 2
+	if availableW <= 0 or availableH <= 0 then return end
+
+	local cellW = CONFIG.cardWidth + CONFIG.cardGap
+	local columns = math.floor((availableW + CONFIG.cardGap) / cellW)
+	columns = math.clamp(columns, CONFIG.minColumns, cardCount)
+	local rows = math.ceil(cardCount / columns)
+
+	local gridW = columns * CONFIG.cardWidth + (columns - 1) * CONFIG.cardGap
+	local gridH = rows * CONFIG.cardHeight + (rows - 1) * (CONFIG.cardGap + CONFIG.avatarPeek)
+
+	local headerH = header.AbsoluteSize.Y
+	local blockH = headerH + CONFIG.headerGap + CONFIG.avatarPeek + gridH
+
+	local scale = math.min(availableW / gridW, availableH / blockH, 1)
+	scale = math.max(scale, CONFIG.minRowScale)
+	rowScale.Scale = scale
+
+	grid.FillDirectionMaxCells = columns
+	cardRow.Size = UDim2.fromOffset(gridW, gridH + CONFIG.avatarPeek)
+
+	local scaledBlockH = headerH + (CONFIG.headerGap + CONFIG.avatarPeek + gridH) * scale
+	local blockTop = -scaledBlockH / 2
+	header.Position = UDim2.new(0.5, 0, 0.5, blockTop + headerH)
+	cardRow.Position = UDim2.new(0.5, 0, 0.5,
+		blockTop + headerH + (CONFIG.headerGap + CONFIG.avatarPeek + gridH / 2) * scale)
+end
 
 -- Re-skin the always-on parts (title text/color, countdown color, top glow) for the given role.
 -- Cards read `activeTheme` directly when they're built, so this must run before we build them.
@@ -341,7 +411,7 @@ local function buildViewport(characterKey)
 	local camCfg = CAMERA[characterKey] or DEFAULT_CAM
 	local distance = extent * CONFIG.cameraDistanceMult * camCfg.zoom
 	-- Look a bit above center; `drop` raises the look point further so the model sits lower in the box.
-	local lookAt = center + Vector3.new(0, extent * CONFIG.cameraAimFrac + camCfg.drop, 0)
+	local lookAt = center + Vector3.new(camCfg.shift or 0, extent * CONFIG.cameraAimFrac + camCfg.drop, 0)
 	local camPos = lookAt + Vector3.new(0, extent * CONFIG.cameraEyeFrac, distance)
 
 	local camera = Instance.new("Camera")
@@ -352,7 +422,13 @@ local function buildViewport(characterKey)
 
 	-- Slow turntable spin around the model's own vertical axis. We first turn the model by `face` so
 	-- its front points at the camera (some models were built facing away), then spin from there.
-	local basePivot = model:GetPivot() * CFrame.Angles(0, math.rad(camCfg.face or 0), 0)
+	-- Spin around the model's VISUAL centre, not model:GetPivot(). A model's pivot can sit
+	-- far from its own geometry (Bobzilla's is ~1220 studs away), which turns the turntable
+	-- into a huge orbit instead of a spin on the spot.
+	local boxCFrame = model:GetBoundingBox()
+	model.PrimaryPart = nil
+	model.WorldPivot = CFrame.new(boxCFrame.Position)
+	local basePivot = model.WorldPivot * CFrame.Angles(0, math.rad(camCfg.face or 0), 0)
 	local angle = 0
 	track(RunService.RenderStepped:Connect(function(dt)
 		angle += dt * CONFIG.spinSpeed
@@ -367,6 +443,8 @@ end
 ----------------------------------------------------------------------------------------------------
 
 local function buildCard(characterKey, layoutOrder, isLocked)
+	local cardTheme = themeForCard(characterKey)
+
 	-- The card is a button so the whole thing is clickable; we handle our own hover colors.
 	local card = Instance.new("TextButton")
 	card.Name = isLocked and "Locked" or characterKey
@@ -419,9 +497,9 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 	roleLabel.Size = UDim2.new(1, -36, 0, 14)
 	roleLabel.Position = UDim2.fromOffset(18, 12)
 	roleLabel.BackgroundTransparency = 1
-	roleLabel.Text = isLocked and "COMING SOON" or activeTheme.roleWord
+	roleLabel.Text = isLocked and "COMING SOON" or cardTheme.roleWord
 	roleLabel.TextXAlignment = Enum.TextXAlignment.Left
-	roleLabel.TextColor3 = activeTheme.accentBright
+	roleLabel.TextColor3 = cardTheme.accentBright
 	roleLabel.TextSize = 11
 	roleLabel.Font = CONFIG.bodyFont
 	roleLabel.ZIndex = 3
@@ -486,7 +564,7 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 		c.Parent = f
 		local s = Instance.new("UIStroke")
 		s.Thickness = thickness
-		s.Color = activeTheme.border
+		s.Color = cardTheme.border
 		s.Transparency = transparency
 		s.Parent = f
 		return s
@@ -510,9 +588,9 @@ local function buildCard(characterKey, layoutOrder, isLocked)
 	-- On hover/select, ONLY the chin + border change to the theme accent -- the striped portrait
 	-- stays as-is. (Red for Yokai, light blue for Wardens.)
 	local function setAccent(on)
-		TweenService:Create(chin, quick, { BackgroundColor3 = on and activeTheme.accent or COLOR.panel }):Play()
-		setBorder(on and activeTheme.accentBright or activeTheme.border)
-		roleLabel.TextColor3 = on and COLOR.black or activeTheme.accentBright
+		TweenService:Create(chin, quick, { BackgroundColor3 = on and cardTheme.accent or COLOR.panel }):Play()
+		setBorder(on and cardTheme.accentBright or cardTheme.border)
+		roleLabel.TextColor3 = on and COLOR.black or cardTheme.accentBright
 	end
 
 	card.MouseEnter:Connect(function()
@@ -586,10 +664,8 @@ local function open(options, role)
 	applyTheme(role)
 
 	-- Total cards = the server's options + an optional trailing locked "coming soon" slot.
-	local count = #options + (CONFIG.showLockedSlot and 1 or 0)
-	cardRow.Size = UDim2.fromOffset(
-		count * CONFIG.cardWidth + math.max(0, count - 1) * CONFIG.cardGap,
-		CONFIG.cardHeight + CONFIG.avatarPeek + 20)
+	cardCount = #options + (CONFIG.showLockedSlot and 1 or 0)
+	relayout()
 
 	for i, characterKey in ipairs(options) do
 		buildCard(characterKey, i, false)
@@ -601,6 +677,10 @@ local function open(options, role)
 	startCountdown()
 	screenGui.Enabled = true
 end
+
+backdrop:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+	if screenGui.Enabled then relayout() end
+end)
 
 local function close()
 	screenGui.Enabled = false

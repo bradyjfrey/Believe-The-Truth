@@ -35,6 +35,11 @@ local Momotaro = require(ServerScriptService.Characters.Momotaro)
 local Rokurokubi = require(ServerScriptService.Characters.Rokurokubi)
 local GirlA = require(ServerScriptService.Characters.GirlA)
 local Otohime = require(ServerScriptService.Characters.Otohime)
+local Okiku = require(ServerScriptService.Characters.Okiku)
+local Tomino = require(ServerScriptService.Characters.Tomino)
+local TwoTimePrime = require(ServerScriptService.Characters.TwoTimePrime)
+local Verity = require(ServerScriptService.Characters.Verity)
+local Bobzilla = require(ServerScriptService.Characters.Bobzilla)
 
 ------------------------------------------------------------------------------
 -- Folders + Remotes in ReplicatedStorage
@@ -81,6 +86,11 @@ local characterModules = {
     [Types.Character.Rokurokubi]  = Rokurokubi,
     [Types.Character.GirlA]       = GirlA,
     [Types.Character.Otohime]     = Otohime,
+    [Types.Character.Okiku]       = Okiku,
+    [Types.Character.Tomino]      = Tomino,
+    [Types.Character.TwoTimePrime] = TwoTimePrime,
+    [Types.Character.Verity]      = Verity,
+    [Types.Character.Bobzilla]    = Bobzilla,
 }
 AbilityService:Init(characterModules, RoundService)
 -- Whiteboard first, so it's ready when RoundService wants to wipe it each round.
@@ -127,6 +137,13 @@ end)
 local function applyCharacterStats(player, character)
     local humanoid = character:WaitForChild("Humanoid")
     local characterName = player:GetAttribute("Character")
+
+    -- Camera cap is set BEFORE the early return so a lobby spawn (no Character attribute)
+    -- resets it. Otherwise a big character's cap follows you into the next round.
+    player.CameraMaxZoomDistance =
+        (characterName and Constants.Camera.PerCharacter[characterName])
+        or Constants.Camera.MaxZoomDistance
+
     if not characterName then return end
 
     -- Apply appearance FIRST. ApplyDescription resets Health to 100, so we
@@ -158,13 +175,38 @@ local function applyCharacterStats(player, character)
         humanoid.Health = humanoid.MaxHealth
         humanoid.WalkSpeed = Constants.Speed.WardenWalk
         Otohime:StartPassives(player)
+    elseif characterName == Types.Character.Okiku then
+        humanoid.MaxHealth = Constants.Okiku.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.OkikuWalk
+        humanoid.HipHeight = humanoid.HipHeight + Constants.Okiku.FloatLift
+        Okiku:StartPassives(player)
+    elseif characterName == Types.Character.Tomino then
+        humanoid.MaxHealth = Constants.Tomino.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.TominoWalk
+        Tomino:StartPassives(player)
+    elseif characterName == Types.Character.TwoTimePrime then
+        humanoid.MaxHealth = Constants.TwoTimePrime.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.WardenWalk
+        TwoTimePrime:StartPassives(player)
+    elseif characterName == Types.Character.Verity then
+        humanoid.MaxHealth = Constants.Verity.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.VerityWalk
+        humanoid.HipHeight = humanoid.HipHeight + Constants.Verity.FloatLift
+        Verity:StartPassives(player)
+    elseif characterName == Types.Character.Bobzilla then
+        humanoid.MaxHealth = Constants.Bobzilla.MaxHealth
+        humanoid.Health = humanoid.MaxHealth
+        humanoid.WalkSpeed = Constants.Speed.BobzillaWalk
+        Bobzilla:StartPassives(player)
     end
 
-    -- Per-character camera zoom-out cap. Most characters use the default; taller ones (Rokurokubi)
-    -- get a roomier cap so their face fits in frame. Runs on every spawn incl. the dressed swap.
-    local maxZoom = (Constants.Camera.PerCharacter and Constants.Camera.PerCharacter[characterName])
-        or Constants.Camera.MaxZoomDistance
-    player.CameraMaxZoomDistance = maxZoom
+    if humanoid.RigType == Enum.HumanoidRigType.R15 then
+        humanoid.AutomaticScalingEnabled = false
+    end
 
     -- Normalize jumping. The dressed rigs came in inconsistent (some with jumping disabled or near-zero
     -- JumpPower, some on UseJumpPower=false), so only Girl A could jump. We force a known state at spawn.

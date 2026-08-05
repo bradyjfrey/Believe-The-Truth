@@ -17,15 +17,39 @@ local function findRig(node)
 	return nil
 end
 
-for _, part in ipairs(Selection:Get()) do
+local selected = Selection:Get()
+if #selected == 0 then
+	warn("Nothing selected. Select the part (or the model holding it) and run again.")
+	return
+end
+
+local targets = {}
+for _, item in ipairs(selected) do
+	if item:IsA("BasePart") then
+		table.insert(targets, item)
+	else
+		for _, d in ipairs(item:GetDescendants()) do
+			if d:IsA("BasePart") then table.insert(targets, d) end
+		end
+	end
+end
+
+if #targets == 0 then
+	warn("No BaseParts found in the selection.")
+	return
+end
+
+for _, part in ipairs(targets) do
 	if part:IsA("BasePart") then
 		local rig = findRig(part)
 		local target = rig and rig:FindFirstChild(TARGET, true)
 		if target then
+			local cleared = 0
 			for _, w in ipairs(rig:GetDescendants()) do
-				if w:IsA("WeldConstraint") or w:IsA("ManualWeld") then
+				if w:IsA("WeldConstraint") or w:IsA("Weld") then
 					if w.Part0 == part or w.Part1 == part then
 						w:Destroy()
+						cleared += 1
 					end
 				end
 			end
@@ -34,7 +58,7 @@ for _, part in ipairs(Selection:Get()) do
 			nw.Part1 = part
 			nw.Parent = target
 			part.Anchored = false
-			print("Re-welded " .. part.Name .. " to " .. TARGET)
+			print(("Re-welded %s to %s (cleared %d old weld(s))"):format(part.Name, TARGET, cleared))
 		else
 			warn("Could not find " .. TARGET)
 		end

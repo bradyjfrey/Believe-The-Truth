@@ -203,6 +203,10 @@ Momotaro.Abilities.Katana = function(player, params)
                 if yokaiHumanoid and yokaiRoot then
                     yokaiHumanoid:TakeDamage(M.Katana.Damage)
                     EffectsService:Play("MomotaroKatanaHit", yokaiRoot.Position)
+                    EffectsService:Play("Stunned", nil, {
+                        AttachTo = yokaiRoot,
+                        Lifetime = M.Katana.StunSeconds,
+                    })
 
                     -- Stun: freeze movement and jumping for StunSeconds.
                     local originalWalk = yokaiHumanoid.WalkSpeed

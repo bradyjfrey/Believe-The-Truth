@@ -20,6 +20,13 @@ Constants.Round = {
     EliminatedRespawnSeconds = 3,    -- how long a caught player lies there before waking up in the lobby
 }
 
+Constants.DeveloperOnlyCharacters = {
+    Okiku = true,
+    Tomino = true,
+    TwoTimePrime = true,
+    Verity = true,
+}
+
 ------------------------------------------------------------------------------
 -- Camera
 ------------------------------------------------------------------------------
@@ -33,6 +40,9 @@ Constants.Camera = {
     -- Anyone not listed here uses MaxZoomDistance above. (Keyed by character name.)
     PerCharacter = {
         Rokurokubi = 45,
+        Okiku = 70,
+        Tomino = 55,
+        Bobzilla = 140,
     },
 }
 
@@ -50,6 +60,9 @@ Constants.Jump = {
     -- Rokurokubi FLOATS, so she never jumps.
     PerCharacter = {
         Rokurokubi = 0,
+        Okiku = 0,
+        Verity = 0,
+        Bobzilla = 0,
     },
 }
 
@@ -70,6 +83,18 @@ Constants.Speed = {
     GirlAWalk = 21,
     GirlARun = 30,                   -- 1.5x walk (per spec)
     GirlAIncognitoRun = 39,          -- 1.3x her run (per spec)
+
+    OkikuWalk = 23,
+    OkikuSprint = 31,
+
+    TominoWalk = 24,
+    TominoSprint = 32,
+
+    VerityWalk = 25,
+    VeritySprint = 33,
+
+    BobzillaWalk = 22,
+    BobzillaSprint = 28,
 }
 
 ------------------------------------------------------------------------------
@@ -306,6 +331,28 @@ Constants.Otohime = {
         StartForwardStuds = 3,       -- how far in front of her the moon conjures
         StartUpStuds = 2,            -- how high above her the moon conjures
     },
+}
+
+Constants.Okiku = {
+    MaxHealth = 1800,
+    FloatLift = 4,
+}
+
+Constants.Tomino = {
+    MaxHealth = 1750,
+}
+
+Constants.TwoTimePrime = {
+    MaxHealth = 110,
+}
+
+Constants.Verity = {
+    MaxHealth = 1600,
+    FloatLift = 6,
+}
+
+Constants.Bobzilla = {
+    MaxHealth = 2500,
 }
 
 ------------------------------------------------------------------------------

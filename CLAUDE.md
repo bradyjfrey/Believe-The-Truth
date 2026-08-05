@@ -49,7 +49,11 @@ For a NEW script, say what instance type to create (e.g. LocalScript) and where.
   Toolbox/Creator-Store model or effect; keep only the mesh/visual. We write our own behavior.
 
 ## Style
-- Plain-English "why" comments, friendly names, no clever Lua; a header block per file saying what
-  it does and how to extend it.
+- **No comments in code** (decided 2026-08-04). No inline, block, or header comments in any `.lua`
+  or `.luau` file. Friendly names and no clever Lua do the explaining instead. Anything a reader
+  genuinely needs (what a tool script does, what to select before running it, how a system fits
+  together) goes in prose: `tools/README.md` for the Command Bar helpers, the `PLAN_*.md` docs and
+  `CHECKLIST.md` for everything else. Files written before this date keep their comments; don't
+  strip them as a side effect of an unrelated edit.
 - **Debug by inspecting, not guessing.** When something doesn't fire, add temporary prints to confirm
   which branch runs, then strip them once fixed.
