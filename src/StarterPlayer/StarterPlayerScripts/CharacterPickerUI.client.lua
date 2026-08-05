@@ -162,7 +162,7 @@ local CAMERA = {
 	Tomino     = { zoom = 1.0,  drop = 0, shift = -2 },
 	TwoTimePrime = { zoom = 1.0, drop = 0 },
 	Verity     = { zoom = 1.0, drop = 0, face = 180 },
-	Bobzilla   = { zoom = 1.0, drop = 0 },
+	Bobzilla   = { zoom = 0.6, drop = 0 },   -- huge; pull the camera in close so he fills the card
 }
 local DEFAULT_CAM = { zoom = 1.0, drop = 0, face = 0, shift = 0 }
 

@@ -1,5 +1,4 @@
 local Selection = game:GetService("Selection")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local FLOAT_LIFT = 0
 local FACE_FLIP = false
@@ -22,6 +21,9 @@ if not source then
 	warn("Select the character model in the Explorer first.")
 	return
 end
+
+local destParent = source.Parent
+local destName = source.Name
 
 local function anyHint(name, hints)
 	local lower = name:lower()
@@ -81,7 +83,7 @@ local centerX = (minV.X + maxV.X) / 2
 local centerZ = (minV.Z + maxV.Z) / 2
 
 local dressed = Instance.new("Model")
-dressed.Name = "StarterCharacter"
+dressed.Name = destName
 
 local limbs, strategy = nil, nil
 local weldReport = {}
@@ -306,12 +308,11 @@ end
 dressed.PrimaryPart = limbs.HumanoidRootPart
 if clone.Parent ~= dressed then clone:Destroy() end
 
-local old = StarterPlayer:FindFirstChild("StarterCharacter")
-if old then old:Destroy() end
-dressed.Parent = StarterPlayer
+source:Destroy()
+dressed.Parent = destParent
 
 print("==================================================")
-print("DRESSED: " .. source.Name)
+print("DRESSED: " .. destName)
 print("==================================================")
 print("Strategy: " .. strategy)
 print(("Rig: %s   Size: %.1f studs tall (%.2fx a standard R6 avatar)")
@@ -321,7 +322,7 @@ print("")
 print(("WELDS (%d costume parts):"):format(#weldReport))
 for _, line in ipairs(weldReport) do print(line) end
 print("")
+print(("Replaced in place: %s"):format(dressed:GetFullName()))
+print("")
 print("Play to walk around. Anything welded to the wrong limb: select it + the right limb, use reweld.luau.")
-print("Run inspect-welds.luau on StarterPlayer.StarterCharacter to see the whole map.")
-print("When it looks right: copy StarterCharacter into ReplicatedStorage.CharacterModels, rename it,")
-print("then delete StarterCharacter from StarterPlayer.")
+print("Run inspect-character.luau on the model to check humanoid=y and hrp=y before trusting it.")

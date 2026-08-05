@@ -68,12 +68,26 @@ local function stripScripts(root)
 	end
 end
 
--- Switch on every particle emitter (with a little instant burst) and play every sound.
-local function enablePlayback(root)
+-- A cloned emitter starts EMPTY, while the template sitting in Studio has been running forever and
+-- looks full. So we fire an instant burst to fake that head start. BurstSeconds = how many seconds
+-- of the emitter's own Rate to dump in at once.
+local DEFAULT_BURST_SECONDS = 0.25
+local DEFAULT_BURST_CAP = 30
+local REQUESTED_BURST_CAP = 1000
+
+local function particleBurst(emitter, burstSeconds)
+	if burstSeconds then
+		return math.clamp(math.floor(emitter.Rate * burstSeconds), 1, REQUESTED_BURST_CAP)
+	end
+	return math.clamp(math.floor(emitter.Rate * DEFAULT_BURST_SECONDS), 1, DEFAULT_BURST_CAP)
+end
+
+-- Switch on every particle emitter (with an instant burst) and play every sound.
+local function enablePlayback(root, burstSeconds)
 	for _, d in ipairs(root:GetDescendants()) do
 		if d:IsA("ParticleEmitter") then
 			d.Enabled = true
-			if d.Rate and d.Rate > 0 then d:Emit(math.clamp(math.floor(d.Rate / 4), 1, 30)) end
+			if d.Rate and d.Rate > 0 then d:Emit(particleBurst(d, burstSeconds)) end
 		elseif d:IsA("Sound") then
 			d.Looped = false
 			d:Play()
@@ -112,6 +126,13 @@ end
 --                                   local offset from the part).
 --                extras.Scale    -- shrink/grow the effect (1 = original size).
 --                extras.Lifetime -- override how long it lives, in seconds.
+--                extras.BurstSeconds -- how many seconds of particles to dump in instantly at the
+--                                   start, so a short-lived effect looks full immediately instead
+--                                   of spending its first second filling up. Leave it out for the
+--                                   old gentle default.
+--                extras.LingerSeconds -- after Lifetime, stop emitting and hide the parts, but keep
+--                                   the effect alive this much longer so smoke and cinders already
+--                                   in the air finish rising and fade out instead of vanishing.
 --                extras.Parent   -- parent the effect under this instance instead of Workspace.
 function EffectsService:Play(effectName, position, extras)
 	extras = extras or {}
@@ -174,10 +195,31 @@ function EffectsService:Play(effectName, position, extras)
 		container.Parent = extras.Parent or Workspace
 	end
 
-	enablePlayback(container)
+	enablePlayback(container, extras.BurstSeconds)
 
 	local lifetime = extras.Lifetime or LIFETIMES[effectName] or DEFAULT_LIFETIME
-	Debris:AddItem(container, lifetime)
+	local linger = extras.LingerSeconds
+
+	if linger then
+		-- Destroying an emitter deletes every particle it still has in the air, so smoke and cinders
+		-- pop out of existence mid-climb. Instead: stop emitting at Lifetime, hide the parts, and let
+		-- what's already flying finish its arc before the whole thing goes.
+		task.delay(lifetime, function()
+			if not container.Parent then return end
+			for _, d in ipairs(container:GetDescendants()) do
+				if d:IsA("ParticleEmitter") or d:IsA("Fire") or d:IsA("Smoke") then
+					d.Enabled = false
+				elseif d:IsA("BasePart") then
+					d.Transparency = 1
+				end
+			end
+		end)
+		Debris:AddItem(container, lifetime + linger)
+	else
+		Debris:AddItem(container, lifetime)
+	end
+
+	return container
 end
 
 return EffectsService

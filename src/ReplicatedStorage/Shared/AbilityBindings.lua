@@ -35,6 +35,9 @@ local AbilityBindings = {
 		{Ability = "DarkMoon",     Key = Enum.KeyCode.Q, Label = "Dark Moon"},
 		{Ability = "HealingPulse", Key = Enum.KeyCode.E, Label = "Heal"},
 	},
+	Bobzilla = {
+		{Ability = "HeatRay", Key = Enum.KeyCode.Q, Label = "Heat Ray"},
+	},
 }
 
 return AbilityBindings

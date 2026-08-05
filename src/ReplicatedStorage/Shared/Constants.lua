@@ -333,26 +333,65 @@ Constants.Otohime = {
     },
 }
 
+-------------------------------------------------------------------------------
+-- OKIKU (Yokai, DEVELOPER-marked — no abilities yet)
+-------------------------------------------------------------------------------
 Constants.Okiku = {
     MaxHealth = 1800,
-    FloatLift = 4,
+    FloatLift = 4,               -- studs added to HipHeight so she hovers instead of walking (she has no legs)
 }
 
+-------------------------------------------------------------------------------
+-- TOMINO (Yokai, DEVELOPER-marked — kit is specced in CHECKLIST.md, not built)
+-------------------------------------------------------------------------------
 Constants.Tomino = {
     MaxHealth = 1750,
 }
 
+-------------------------------------------------------------------------------
+-- TWO TIME PRIME (Warden, DEVELOPER-marked — no abilities yet)
+-------------------------------------------------------------------------------
 Constants.TwoTimePrime = {
-    MaxHealth = 110,
+    MaxHealth = 110,             -- a survivor, so same fragile range as Momotaro/Otohime
 }
 
+-------------------------------------------------------------------------------
+-- VERITY (Yokai, DEVELOPER-marked — no abilities yet)
+-------------------------------------------------------------------------------
 Constants.Verity = {
     MaxHealth = 1600,
-    FloatLift = 6,
+    FloatLift = 6,               -- studs added to HipHeight; she's a floating globe, not a walker
 }
 
+-------------------------------------------------------------------------------
+-- BOBZILLA (Yokai, FREE pick — the slow brute who can't hide)
+-- His speed is the price the Heat Ray pays for. If anyone speeds him up, the
+-- beam needs rebalancing too.
+-------------------------------------------------------------------------------
 Constants.Bobzilla = {
-    MaxHealth = 2500,
+    MaxHealth = 2500,            -- highest in the game; he's meant to survive being focused
+
+    HeatRay = {
+        Keybind = Enum.KeyCode.Q,
+        CooldownSeconds = 30,
+        WindupSeconds = 0.6,     -- glow in his mouth BEFORE the beam — this is the survivors' warning, don't cut it
+        DurationSeconds = 2,     -- how long the beam stays out
+        TickSeconds = 0.25,      -- how often it re-aims and re-checks who's in it
+        DamagePerTick = 12,      -- 8 ticks x 12 = 96 total, just short of killing a 110 HP survivor from full
+        RangeStuds = 150,        -- how far the beam reaches if nothing blocks it
+        HitRadiusStuds = 25,     -- how close to the beam's centre line you must be to get hit. Also sets how far apart the trail fires drop
+        MouthHeightStuds = 64,   -- where the beam starts, measured UP FROM HIS FEET (not from his root). Tuned in-game 2026-08-05
+        MouthForwardStuds = 28,  -- how far in front of his centre the beam starts. Too small and it fires from inside his body
+        MouthPitchDegrees = -25, -- negative tilts the beam DOWN; at 0 it flies over every survivor's head
+        BeamRollDegrees = 0,     -- spins the beam mesh about its own length; purely cosmetic
+        FiringSpeedMultiplier = 0.15,  -- his walk speed while firing. NOT 0 — at 0 he can't turn, so the beam can't track
+        TracksAim = true,        -- true = the beam follows where he's facing; false = it locks to the direction he fired
+        WindupScale = 0.4,       -- size of the mouth-glow effect (1 = the template's built size)
+        HitLifetimeSeconds = 4,  -- how long each fire burns where the beam lands
+        HitBurstSeconds = 1.5,   -- seconds of particles dumped in instantly so the fire starts BIG instead of building up
+        HitLingerSeconds = 8,    -- after the fire stops, how long the smoke and cinders keep rising before the effect is removed
+        WindupBurstSeconds = 0.5,-- same idea for the mouth glow, which only lives 0.6s and has no time to fill
+    },
 }
 
 ------------------------------------------------------------------------------

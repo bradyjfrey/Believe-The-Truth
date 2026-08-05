@@ -49,11 +49,20 @@ For a NEW script, say what instance type to create (e.g. LocalScript) and where.
   Toolbox/Creator-Store model or effect; keep only the mesh/visual. We write our own behavior.
 
 ## Style
-- **No comments in code** (decided 2026-08-04). No inline, block, or header comments in any `.lua`
-  or `.luau` file. Friendly names and no clever Lua do the explaining instead. Anything a reader
-  genuinely needs (what a tool script does, what to select before running it, how a system fits
-  together) goes in prose: `tools/README.md` for the Command Bar helpers, the `PLAN_*.md` docs and
-  `CHECKLIST.md` for everything else. Files written before this date keep their comments; don't
-  strip them as a side effect of an unrelated edit.
+- **Comments explain MEANING and LOCATION, never BEHAVIOR** (refined 2026-08-05; supersedes the
+  blanket "no comments" rule of 2026-08-04, which was too broad). The test: *could someone who reads
+  Lua perfectly still not know this?* If yes, comment it. If no, delete it.
+  - ✅ **Tunable values** — every number in `Constants.lua` gets a short trailing note: its units,
+    what it affects, what it deliberately does NOT affect, or why it's that number. `RadiusStuds = 20`
+    is ambiguous on its own and no amount of renaming fixes it without the name becoming a sentence.
+  - ✅ **Section banners** — the `-----` / `NAME` / `-----` dividers that separate each character or
+    system in a long file. Those are navigation, not narration. Every character block in
+    `Constants.lua` gets one.
+  - ❌ **Narrating code** — restating what a function does above it, numbered file headers walking
+    through what the script does, `-- Little helpers` over three obvious helpers. Friendly names and
+    no clever Lua do that job.
+  - Anything longer than a line (what a tool script does, what to select before running it, how a
+    system fits together) goes in prose instead: `tools/README.md` for the Command Bar helpers, the
+    `PLAN_*.md` docs and `CHECKLIST.md` for everything else.
 - **Debug by inspecting, not guessing.** When something doesn't fire, add temporary prints to confirm
   which branch runs, then strip them once fixed.

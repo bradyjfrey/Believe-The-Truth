@@ -127,6 +127,14 @@ local function spawnPlayerAt(player, baseCFrame, characterKey)
 		if templateHumanoid and templateHumanoid.RigType == Enum.HumanoidRigType.R15 then
 			templateHumanoid.AutomaticScalingEnabled = false
 		end
+
+		local missing = {}
+		if not templateHumanoid then table.insert(missing, "Humanoid") end
+		if not template:FindFirstChild("HumanoidRootPart", true) then table.insert(missing, "HumanoidRootPart") end
+		if #missing > 0 then
+			warn(("Character %s is missing its %s, please contact the developers."):format(
+				tostring(characterKey), table.concat(missing, " and ")))
+		end
 		local existing = StarterPlayer:FindFirstChild("StarterCharacter")
 		if existing then existing:Destroy() end
 		template.Parent = StarterPlayer
@@ -199,10 +207,10 @@ local function yokaiOptionsFor(player)
 	local opts = {}
 	if ownsCharacter(player, Types.Character.Rokurokubi) then table.insert(opts, Types.Character.Rokurokubi) end
 	if ownsCharacter(player, Types.Character.GirlA) then table.insert(opts, Types.Character.GirlA) end
+	if ownsCharacter(player, Types.Character.Bobzilla) then table.insert(opts, Types.Character.Bobzilla) end
 	if ownsCharacter(player, Types.Character.Okiku) then table.insert(opts, Types.Character.Okiku) end
 	if ownsCharacter(player, Types.Character.Tomino) then table.insert(opts, Types.Character.Tomino) end
 	if ownsCharacter(player, Types.Character.Verity) then table.insert(opts, Types.Character.Verity) end
-	if ownsCharacter(player, Types.Character.Bobzilla) then table.insert(opts, Types.Character.Bobzilla) end
 	if #opts == 0 then table.insert(opts, Types.Character.Rokurokubi) end
 	return opts
 end
