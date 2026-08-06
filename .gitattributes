@@ -1,0 +1,3 @@
+# Everything in src/ and tools/ is Luau. GitHub's language bar splits them into "Lua"
+# and "Luau" because it goes by file extension, and src/ happens to use .lua.
+*.lua linguist-language=Luau

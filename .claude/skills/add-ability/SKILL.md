@@ -11,7 +11,7 @@ Abilities live in `src/ServerScriptService/Characters/<Character>.lua` as
 dispatches to the character module.
 
 ## Steps
-1. **Add its numbers to `Constants.<Character>`** — at minimum `Keybind`, `CooldownSeconds`,
+1. **Add its numbers to `Constants.<Character>`:** at minimum `Keybind`, `CooldownSeconds`,
    and the gameplay values (Damage, Radius, Range, durations…). Never hardcode these in code.
 2. **Write the ability function** in the character module, following the standard shape:
    ```lua
@@ -24,7 +24,7 @@ dispatches to the character module.
        -- gameplay loop over Players:GetPlayers(), gated by isWarden/isYokai
    end
    ```
-3. **Build its effect** (optional) — call `EffectsService:Play("<Character><Name>", ...)` and add a
+3. **Build its effect** (optional): call `EffectsService:Play("<Character><Name>", ...)` and add a
    matching template in `ReplicatedStorage.Effects` named EXACTLY that (see the `build-effect` skill).
 4. **Bind the key** in `AbilityInput.client.lua`. The `BINDINGS` table is keyed by character name;
    add an entry to that character's list:
@@ -37,9 +37,9 @@ dispatches to the character module.
    `remote:FireAllClients(...)`; server→one-client uses `remote:FireClient(player, ...)`.
 
 ## Gotchas
-- The RemoteEvent is auto-created by Bootstrap at runtime — do NOT hand-create it in Studio. If a
+- The RemoteEvent is auto-created by Bootstrap at runtime, so do NOT hand-create it in Studio. If a
   remote seems missing, Bootstrap usually wasn't pasted/updated.
-- `params` carries `{Phase = "Begin"/"End"}` for hold abilities and `{}` for taps — handle both.
+- `params` carries `{Phase = "Begin"/"End"}` for hold abilities and `{}` for taps; handle both.
 - Gameplay numbers (damage/heal) go in the ability, never in the effect template.
-- Reads of another player's character parts can race with spawns — guard `player.Character` and
+- Reads of another player's character parts can race with spawns, so guard `player.Character` and
   `FindFirstChild("HumanoidRootPart")` before using them.

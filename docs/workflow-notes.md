@@ -1,10 +1,10 @@
-# Workflow Notes — Believe the Truth
+# Workflow Notes: Believe the Truth
 
 Durable knowledge for this codebase: conventions we settled on, repeatable
 procedures, and gotchas with their fixes. Written for a team new to
 Roblox/Lua, so it errs toward explaining *why*.
 
-Anything marked **[SITUATIONAL]** was a one-off fix for a single problem — it
+Anything marked **[SITUATIONAL]** was a one-off fix for a single problem. It
 is NOT a standard to copy. Everything else is a real convention.
 
 ---
@@ -13,27 +13,28 @@ is NOT a standard to copy. Everything else is a real convention.
 
 Source lives under `src/` and maps to Roblox services by folder name:
 
-- `src/ReplicatedStorage/Shared/` — modules both server and client require:
+- `src/ReplicatedStorage/Shared/`: modules both server and client require:
   `Constants.lua` (all tunable numbers), `Types.lua` (Character/Team enums),
   `AbilityModule.lua` (cooldown helpers), `CharacterAppearance.lua`.
-- `src/ServerScriptService/Bootstrap.server.lua` — the ONE server boot script.
+- `src/ServerScriptService/Bootstrap.server.lua` is the ONE server boot script.
   It creates Remotes/folders, wires services, applies per-character stats on
   spawn, and runs the round tick.
-- `src/ServerScriptService/Services/` — long-lived systems: `RoundService`,
+- `src/ServerScriptService/Services/`: long-lived systems: `RoundService`,
   `AbilityService`, `DisguiseService`, `EffectsService`, `BleedService`.
-- `src/ServerScriptService/Characters/` — one module per playable character
-  (`Momotaro`, `Rokurokubi`, `GirlA`, `Otohime`). Each returns a table with
+- `src/ServerScriptService/Characters/`: one module per playable character
+  (`Momotaro`, `Rokurokubi`, `GirlA`, `Otohime`, `Bobzilla`, `Okiku`, `Tomino`,
+  `TwoTimePrime`, `Verity`). Each returns a table with
   `.Abilities.<Name>` functions and a `:StartPassives(player)` method.
-- `src/StarterPlayer/StarterPlayerScripts/` — client scripts: `HUD.client.lua`,
+- `src/StarterPlayer/StarterPlayerScripts/`: client scripts: `HUD.client.lua`,
   `Sprint.client.lua`, `WeaponSwing.client.lua`, `AbilityInput.client.lua`.
-- `src/StarterPlayer/StarterCharacterScripts/` — scripts that re-run on every
+- `src/StarterPlayer/StarterCharacterScripts/`: scripts that re-run on every
   spawn (e.g. `Health.server.lua`).
 
-### No Argon sync — paste by hand
+### No Argon sync: paste by hand
 We do NOT run Argon to sync `src/` into Roblox Studio (it's reconcile-based and
 has clobbered uncommitted edits). Workflow: edit files on disk, then Claude
 tells Brady exactly which file to copy and its exact Studio destination. Always
-give the repo-root-relative disk path (`src/...`) AND the Studio tree location —
+give the repo-root-relative disk path (`src/...`) AND the Studio tree location,
 never a bare filename.
 
 ---
@@ -41,7 +42,7 @@ never a bare filename.
 ## 2. Conventions we settled on
 
 ### Constants.lua holds every tunable number
-Damage, radii, cooldowns, speeds, HP — all live in `Constants` in per-character
+Damage, radii, cooldowns, speeds, HP all live in `Constants` in per-character
 or per-system tables (e.g. `Constants.Otohime.DarkMoon.Damage`,
 `Constants.Stamina.DrainPerSecond`). Character/service code reads from there and
 never hardcodes gameplay numbers. This lets the kids tune values in one place.
@@ -58,12 +59,12 @@ Every character module follows the same pattern (see `Otohime.lua` as the
 cleanest example):
 - `local O = Constants.<Character>` alias at top.
 - Small local helpers: `getHumanoid`, `getRootPart`, `isWarden`, `isYokai`.
-- `Character.Abilities.<Name> = function(player, params) ... end` — each one:
+- `Character.Abilities.<Name> = function(player, params) ... end`, each one:
   1. `if not AbilityModule.isOffCooldown(player, "<Name>") then return end`
   2. get root/humanoid, bail if missing
   3. `AbilityModule.startCooldown(player, "<Name>", O.<Name>.CooldownSeconds)`
   4. play effect, then do the gameplay loop over `Players:GetPlayers()`.
-- `function Character:StartPassives(player)` — always present, even if empty, as
+- `function Character:StartPassives(player)`: always present, even if empty, as
   an extension point (Bootstrap calls it on spawn).
 
 ### Team checks use attributes
@@ -71,12 +72,17 @@ Team membership is read via `player:GetAttribute("Team") == Types.Team.Warden`
 (or `.Yokai`). Character identity is `player:GetAttribute("Character")`.
 
 ### Comment style
-Plain-English "why" comments, friendly names, no clever Lua. Header block at the
-top of each file explaining what it does and how to extend it.
+Comments explain MEANING and LOCATION, never BEHAVIOR (settled 2026-08-05; this
+replaces the older "plain-English why comments plus a header block on every file"
+rule, which produced a lot of narration). The test: could someone who reads Lua
+perfectly still not know this? Every number in `Constants.lua` gets a short
+trailing note on its units and what it affects, and every character block gets a
+section banner. Nothing restates what the code already says. Friendly names and
+no clever Lua carry the rest. Full rule in `CLAUDE.md`.
 
 ### Colorblind-safe UI
-Brady is colorblind. UI is described and encoded by shape/position/length/number
-— never by color alone. HUD themes exist but color is never the only signal.
+Brady is colorblind. UI is described and encoded by shape/position/length/number,
+never by color alone. HUD themes exist but color is never the only signal.
 
 ---
 
@@ -84,9 +90,9 @@ Brady is colorblind. UI is described and encoded by shape/position/length/number
 
 There are TWO different objects that can share a name; keep them distinct:
 
-- **(A) A client script** in `StarterPlayerScripts` (e.g. `WeaponSwing.client.lua`)
-  — you create/paste this file yourself.
-- **(B) A RemoteEvent** at `ReplicatedStorage > Remotes > WeaponSwing` — this is
+- **(A) A client script** in `StarterPlayerScripts` (e.g. `WeaponSwing.client.lua`).
+  You create/paste this file yourself.
+- **(B) A RemoteEvent** at `ReplicatedStorage > Remotes > WeaponSwing`. This one is
   **auto-created by Bootstrap at runtime** via `ensureRemote(...)`. You do NOT
   hand-create it. If a remote seems missing, the cause is usually that
   Bootstrap wasn't pasted/updated.
@@ -125,7 +131,7 @@ broadcasts use `remote:FireAllClients(...)`.
    `characterModules` map, and add an `elseif characterName == ...` branch in
    `applyCharacterStats` that sets MaxHealth/Health/WalkSpeed and calls
    `StartPassives`. **Gotcha:** each branch must use ITS OWN
-   `Constants.<Name>.MaxHealth` — an early Otohime branch mistakenly used
+   `Constants.<Name>.MaxHealth`; an early Otohime branch mistakenly used
    Momotaro's.
 4. Add key bindings in `AbilityInput.client.lua`, and a HUD `CHARACTER_LABEL`
    entry.
@@ -143,22 +149,22 @@ To build one:
 1. Drop a Part, Model, or Folder-of-parts into `ReplicatedStorage.Effects`,
    named exactly what the ability passes (e.g. `GirlASlash`, `OtohimeDarkMoon`).
 2. Put ParticleEmitters / Sounds / PointLights inside it.
-3. **Delete any bundled Script/LocalScript/ModuleScript** — free art assets
+3. **Delete any bundled Script/LocalScript/ModuleScript.** Free art assets
    smuggle in scripts (backdoor risk). EffectsService also strips them
    defensively, but delete them in the template too. (We hit this with a
    `PoseTexture` script inside `OtohimeHealingPulse`.)
 4. Optionally add a lifetime override in EffectsService's `LIFETIMES` table.
 
 `extras` options:
-- `AttachTo` (BasePart) — the effect welds to and RIDES this part (a limb or a
+- `AttachTo` (BasePart): the effect welds to and RIDES this part (a limb or a
   mover). With `AttachTo`, `extras.CFrame` is a LOCAL offset from that part.
   Parts are made massless/non-colliding so they follow cleanly.
-- `CFrame` — world placement (or local offset when combined with `AttachTo`).
+- `CFrame`: world placement (or local offset when combined with `AttachTo`).
 - `Scale`, `Lifetime`, `Parent`.
 
 Two placement modes and why:
 - **Fixed spot** (no `AttachTo`): parts are anchored, then the effect is
-  re-centered by BOUNDING BOX so its visual middle sits on the target — most
+  re-centered by BOUNDING BOX so its visual middle sits on the target. Most
   templates are built off-center, so without this they appear shoved to one side
   or behind the target.
 - **Attached/ride-along**: use this whenever an ability moves the caster (dashes/
@@ -217,14 +223,14 @@ R6 joint names (not R15!): `Right Arm` / `Left Arm` are the parts;
 
 1. Move the character model and the weapon out to `Workspace` to position by eye.
 2. Position the weapon in the hand.
-3. Add a `WeldConstraint` — Part0/Part1 order does not matter; it locks the
+3. Add a `WeldConstraint`. Part0/Part1 order does not matter; it locks the
    current relative position. (For a hatchet: Part0 = the arm, Part1 = the
    handle works fine.)
 4. On the weapon parts: Anchored OFF, CanCollide OFF, Massless ON.
 5. Parent the weapon under the character model so it travels with spawns.
 
 **[SITUATIONAL]** Some pre-built weapons (Momotaro's katana) already contained
-internal structure — attachments, trails, and a `SwordLines` Motor6D. That's
+internal structure: attachments, trails, and a `SwordLines` Motor6D. That's
 fine; you weld the whole weapon to the arm as one unit. Not a standard we
 created, just something to recognize in donated assets.
 
@@ -237,7 +243,7 @@ created, just something to recognize in donated assets.
 
 - **Damage healed back almost instantly.** Roblox has default Humanoid health
   regen. Disabled it with an (empty) Script named EXACTLY `Health` in
-  `StarterPlayer > StarterCharacterScripts` — Roblox treats a script of that
+  `StarterPlayer > StarterCharacterScripts`. Roblox treats a script of that
   name as an override for its built-in regen. Must be a Script (not LocalScript).
 
 - **Default health bar showing.** Hide it with
@@ -247,7 +253,7 @@ created, just something to recognize in donated assets.
 
 - **Sprint stomping ability slows.** In `Sprint.client.lua`, only write
   `WalkSpeed` on the sprinting↔not-sprinting TRANSITION (`sprinting ~= wasSprinting`),
-  not every frame — otherwise it overwrites temporary slows from abilities. Also
+  not every frame, or it overwrites temporary slows from abilities. Also
   skip while an `Incognito` attribute is set.
 
 - **Client↔HUD stamina.** Sprint sets a `Stamina` attribute (0..1) on the player;
@@ -263,18 +269,18 @@ created, just something to recognize in donated assets.
 - **Effect appears sideways / inside the body on a lunging attacker.** Use
   `AttachTo` the limb instead of world placement (see §6). **[SITUATIONAL]**
   GirlA's slash orientation needed hand-tuned offset knobs
-  (`FWD=-12, ROT_X=240, ROT_Z=90`) — those exact numbers are specific to her
+  (`FWD=-12, ROT_X=240, ROT_Z=90`). Those exact numbers are specific to her
   slash, not a formula.
 
 - **Katana cooldown set to 0.** `Momotaro.Katana.CooldownSeconds` was temporarily
-  set to 0 (spec was 25) so the kids can pick a real value later. **[SITUATIONAL]**
-  — restore a real cooldown before launch.
+  set to 0 (spec was 25) so the kids can pick a real value later. **[SITUATIONAL]**,
+  so restore a real cooldown before launch.
 
-- **Healing Pulse doesn't heal Otohime herself.** By design — she's a team medic
+- **Healing Pulse doesn't heal Otohime herself.** By design: she's a team medic
   (`other ~= player` in the loop). Confirmed intended, not a bug.
 
 - **Free-asset scripts.** Any Script bundled inside a Toolbox/Creator-Store model
-  or effect is a backdoor risk — delete it and keep only the mesh/visual. We
+  or effect is a backdoor risk. Delete it and keep only the mesh/visual. We
   write our own behavior. EffectsService strips scripts from clones as a backstop.
 
 ---

@@ -1,4 +1,4 @@
-# Skin Store Money — DECIDED
+# Skin Store Money: DECIDED
 
 Brady's economy proposal, reviewed and answered by the kids (2026-07-15).
 This is now the decided design of record for the store. Nothing here is built yet;
@@ -6,7 +6,7 @@ build order is phase-1 free locker (browse + equip + DataStore save), then curre
 
 ## The currency: Omamori
 
-The kids picked **Omamori** (protective charms — on-theme against yokai).
+The kids picked **Omamori** (protective charms, on-theme against yokai).
 Singular and plural: "20 Omamori."
 
 ## How you earn
@@ -16,10 +16,10 @@ Singular and plural: "20 Omamori."
 | Finish a round (win or lose) | 5 | Just for playing. Leaving mid-round earns nothing. |
 | Your team wins the round | 25 | The big one. Same for Wardens and Yokai. |
 | Survive more than 1 minute (Wardens) | 10 | One time per round. |
-| Yokai catches someone | 10 | A "catch" = reducing a Warden to 0 HP (elimination — that's the only way anyone goes down in the current game). If a down/revive system is ever built later, the payout moves to the down. |
+| Yokai catches someone | 10 | A "catch" = reducing a Warden to 0 HP (elimination, and that's the only way anyone goes down in the current game). If a down/revive system is ever built later, the payout moves to the down. |
 | Use a move successfully | 2 each | See "what counts" below. Capped at 10 per round. |
 | First win of the day | 20 | Kids' addition. Needs a per-player "last win date" saved in the DataStore (same save as the coins). |
-| Beat the boss | 40 | Kids' addition — DORMANT until the boss exists. The boss itself (giant skeleton in a hellverse map — Gashadokuro is a real yokai!) is a separate future project on the checklist wishlist. |
+| Beat the boss | 40 | Kids' addition, DORMANT until the boss exists. The boss itself (giant skeleton in a hellverse map; Gashadokuro is a real yokai!) is a separate future project on the checklist wishlist. |
 
 A typical round pays roughly 15 to 45 Omamori.
 
@@ -56,7 +56,7 @@ alive. The fanciest skins should take long enough that wearing one means somethi
    but looks unique.
 4. Prices and payouts are all in one settings list (Constants.lua), so changing
    "25 for a win" to "30 for a win" takes ten seconds, not a rebuild.
-5. No Robux, no real money, ever — in-game earned Omamori only.
+5. No Robux, no real money, ever: in-game earned Omamori only.
 
 ## Kids' answers (2026-07-15, for the record)
 
@@ -66,5 +66,5 @@ alive. The fanciest skins should take long enough that wearing one means somethi
 4. Bonuses? **First win of the day = 20; beating a boss = 40** ("a giant skeleton
    boss in a hellverse map").
 5. Spend on things besides skins? **Marker colors, taunts, and emotes.**
-6. What counts as a Yokai catch? **"A downed"** — confirmed with Brady this means
+6. What counts as a Yokai catch? **"A downed"**, confirmed with Brady this means
    what the game already does (0 HP = out for the round); nothing new to build.

@@ -13,12 +13,12 @@ style on that player's body, so all players see it. The weapon must already be w
 ## Steps
 1. **Weld the weapon to the correct arm** first (see `weld-prop`).
 2. **Add a `CONFIG` entry** in `WeaponSwing.client.lua` keyed by style name:
-   - `Duration` — total swing time (seconds)
-   - `WindupFrac` — fraction spent winding up before the chop (0..1)
-   - `WindupAngle`, `SwingAngle` — degrees
-   - `PrimaryArm` — `"Right"` or `"Left"`
-   - `TwoHanded` — if true, the off-hand swings along too
-   - `Axis` — `"X"` / `"Y"` / `"Z"` (which plane the arm swings in)
+   - `Duration`: total swing time (seconds)
+   - `WindupFrac`: fraction spent winding up before the chop (0..1)
+   - `WindupAngle`, `SwingAngle`: degrees
+   - `PrimaryArm`: `"Right"` or `"Left"`
+   - `TwoHanded`: if true, the off-hand swings along too
+   - `Axis`: `"X"` / `"Y"` / `"Z"` (which plane the arm swings in)
 3. **Fire the remote** from the character's attack code:
    `swingRemote:FireAllClients(player, "<StyleName>")`.
 
@@ -26,7 +26,7 @@ style on that player's body, so all players see it. The weapon must already be w
 Every R6 character runs Roblox's built-in `Animate` script, which drives the shoulder
 `Motor6D.Transform` every frame for walk/idle. If you pose the arm via `.Transform` (or on the
 server), Animate stomps it and nothing visibly moves. Instead pose the shoulder's `.C0` in a client
-`RenderStepped` connection — it runs AFTER the default animation each frame, and the animator never
+`RenderStepped` connection. It runs AFTER the default animation each frame, and the animator never
 touches `C0`, so the swing wins. Cache each joint's resting `C0` in a weak table, rotate off it, and
 restore it when the swing ends.
 

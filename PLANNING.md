@@ -1,10 +1,10 @@
-# Believe the Truth — Planning Doc
+# Believe the Truth: Planning Doc
 
 **Game:** Believe the Truth (Shinjitsu Shinji, 真実信じ)
 **Platform:** Roblox (PC + Mobile)
-**Genre:** Asymmetric horror — Wardens (survivors) vs. Yokai (killers)
+**Genre:** Asymmetric horror: Wardens (survivors) vs. Yokai (killers)
 
-This is the living spec. When the team changes how something works, update this file. It's the source of truth — code reads from `Constants.lua`, but if `Constants.lua` and PLANNING.md disagree, PLANNING.md wins and we change the code.
+This is the living spec. When the team changes how something works, update this file. It's the source of truth: code reads from `Constants.lua`, but if `Constants.lua` and PLANNING.md disagree, PLANNING.md wins and we change the code.
 
 ---
 
@@ -14,12 +14,12 @@ The Wardens have been summoned to protect cursed Inunaki City. They complete Err
 
 ### Round flow (this build)
 
-1. **Lobby** — players join a server. Once there are at least 2 players, a lobby timer starts. When it ends, a round begins.
-2. **In round** — the game randomly picks 1 player to be Yokai. Everyone else is a Warden. If the chosen Yokai owns more than one Yokai character, they get to choose which one to play. Same idea will apply to Wardens later when there's more than one Warden character.
+1. **Lobby.** Players join a server. Once there are at least 2 players, a lobby timer starts. When it ends, a round begins.
+2. **In round.** The game randomly picks 1 player to be Yokai. Everyone else is a Warden. If the chosen Yokai owns more than one Yokai character, they get to choose which one to play. Same idea will apply to Wardens later when there's more than one Warden character.
 3. **Win conditions:**
    - **Wardens win** when all Yokai are dead OR the round timer runs out (they survived).
    - **Yokai win** when all Wardens are dead.
-4. **End** — short pause, then back to lobby. Everyone respawns.
+4. **End.** Short pause, then back to lobby. Everyone respawns.
 
 ### Death
 
@@ -43,7 +43,7 @@ When a player dies mid-round, they spectate until the round ends. They don't res
 
 ## Characters in this build
 
-Three characters in scope. Momotaro and Rokurokubi are **starter** characters every player owns automatically. Girl A is **paid** (1,255 coins) — for the first playtest she's playable by everyone so we can test her, but eventually only owners will get her.
+Three characters in scope. Momotaro and Rokurokubi are **starter** characters every player owns automatically. Girl A is **paid** (1,255 coins); for the first playtest she's playable by everyone so we can test her, but eventually only owners will get her.
 
 | Character | Team | Starter? |
 | --- | --- | --- |
@@ -60,7 +60,7 @@ Roblox's default walk speed is 16. We're a little faster so the game feels snapp
 | Character | Walk | Sprint / Run | Notes |
 | --- | --- | --- | --- |
 | Momotaro (Warden) | 20 | 28 | Hold Shift to sprint |
-| Rokurokubi | 25 | 33 | Hold Shift to sprint — she can stalk slow or chase fast |
+| Rokurokubi | 25 | 33 | Hold Shift to sprint; she can stalk slow or chase fast |
 | Girl A | 21 | 30 | Hold Shift to sprint. Incognito Mode boosts her to 39. |
 
 ---
@@ -82,47 +82,47 @@ A boy in normal Roblox proportions. Color palette uses two peach-themed Pantones
 | Element | Color | Notes |
 | --- | --- | --- |
 | Skin tone | `#f8b892` | Pantone "Peach Fuzz" 13-1023 TCX |
-| Happi coat (torso) | `#ef9080` | Pantone "Peach Pink" 16-1626 TPX — solid color placeholder until shirt texture art exists |
+| Happi coat (torso) | `#ef9080` | Pantone "Peach Pink" 16-1626 TPX; solid color placeholder until shirt texture art exists |
 | Hakama pants (legs) | `#506ec0` | Blue, tucked into the socks |
 | Gloves (hands) | `#330541` | Fingerless, dark purple |
 | Socks (feet) | `#330541` | Same purple as gloves, open-toed |
 | Obi sash | `#3d6b3a` | Green, with a knot tied in front |
-| Satchel | `#8B6F47` | Brown — strap goes diagonally over right shoulder, pouch on left hip |
+| Satchel | `#8B6F47` | Brown; strap goes diagonally over right shoulder, pouch on left hip |
 | Katana blade | `#c0c0c0` | Held in right hand, blade pointing down |
 | Katana hilt wrap | `#2a1f15` | Dark wrap |
 | Katana tsuba (guard) | `#f8b892` | Peach to match the palette |
-| Hair | `#633d4a` | Cropped, shaggy — Avatar Marketplace asset ID `9244033194` |
-| Eyes | `#608666` | Muted green — TODO: needs a custom face decal upload |
+| Hair | `#633d4a` | Cropped, shaggy; Avatar Marketplace asset ID `9244033194` |
+| Eyes | `#608666` | Muted green. TODO: needs a custom face decal upload |
 
-### Passive — Bird's Eye View
+### Passive: Bird's Eye View
 
-> "It is a great advantage for us to have you with us, for you have good wings." — Momotaro
+> "It is a great advantage for us to have you with us, for you have good wings." (Momotaro)
 
 Kijiro the pheasant follows Momotaro and highlights all Yokai (anywhere on the map) every 45 seconds, for 6.5 seconds.
 
-### Q — Katana (25s cooldown)
+### Q: Katana (25s cooldown)
 
-> "Go with all care and speed. We expect you back victorious!" — Momotaro's Mother
+> "Go with all care and speed. We expect you back victorious!" (Momotaro's Mother)
 
 After a 0.5-second windup, Momotaro swings his katana and dashes forward 30 studs. Any Yokai caught in the swing takes 15 damage and is stunned for 3 seconds. The dash stops at walls. It can hit multiple enemies in its path.
 
-### E — Guard Dog / Inuta (30s cooldown)
+### E: Guard Dog / Inuta (30s cooldown)
 
-> "You are a rude man to pass my field without asking permission first." — Inuta the Dog
+> "You are a rude man to pass my field without asking permission first." (Inuta the Dog)
 
 Inuta drops at Momotaro's feet and stands guard. He detects Yokai within 50 studs. While they're in range, he barks for 1–5 damage every second and slows them by 50%. Inuta has 40 HP. He returns to Momotaro when his HP hits 0 OR after 60 seconds.
 
-### R — Messy Eater (15s cooldown)
+### R: Messy Eater (15s cooldown)
 
-> "I heard of your expedition to Onigashima, and I have come to go with you." — Saru the Monkey
+> "I heard of your expedition to Onigashima, and I have come to go with you." (Saru the Monkey)
 
 Saru briefly appears, eats a banana, and drops the peel where he was standing. Any Yokai who steps on it gets ragdolled for 2 seconds. The peel disappears after being stepped on or after 60 seconds.
 
-### F — Kibi Dango (20s cooldown)
+### F: Kibi Dango (20s cooldown)
 
-> "Union amongst ourselves is better than any earthly gain." — Momotaro
+> "Union amongst ourselves is better than any earthly gain." (Momotaro)
 
-Momotaro eats a stick of kibi dango to heal 30 HP himself. If a Warden teammate is within 5 studs, the dango goes to them instead and heals 40 HP. Kibi Dango also cures any bleed effects — Rokurokubi's bite, Girl A's stray blade, anything.
+Momotaro eats a stick of kibi dango to heal 30 HP himself. If a Warden teammate is within 5 studs, the dango goes to them instead and heals 40 HP. Kibi Dango also cures any bleed effects: Rokurokubi's bite, Girl A's stray blade, anything.
 
 ---
 
@@ -131,19 +131,19 @@ Momotaro eats a stick of kibi dango to heal 30 HP himself. If a Warden teammate 
 > "may death do us part.."
 
 **HP:** 2000
-**Walking speed:** 25 (Shift to sprint up to 33 — faster than Warden sprint)
+**Walking speed:** 25 (Shift to sprint up to 33, faster than Warden sprint)
 **Cost:** Free (starter Yokai)
 
 A long-necked demon born from waste, eating out of hunger; later evolved to feast on humans. Description from the team: *on trails to murder, to starvation, till death do us part, I wish you luck..*
 
 ### Appearance
 
-Tall, geisha-styled woman with a dramatically stretched neck. Her base form makes it obvious what she is — Disguise is how she hides.
+Tall, geisha-styled woman with a dramatically stretched neck. Her base form makes it obvious what she is; Disguise is how she hides.
 
 | Element | Color | Notes |
 | --- | --- | --- |
 | Skin tone | `#f5e3d4` | Pale, geisha-white |
-| Stretched neck | same as skin | ~4-stud column connecting torso to floating head — distinctive silhouette |
+| Stretched neck | same as skin | ~4-stud column connecting torso to floating head; distinctive silhouette |
 | Full outfit | Creator Store Bundle `13358640198` | Whole avatar package (body + clothing + accessories) loaded as a single character bundle |
 | Obi sash | `#4a0e0e` | Darker red, knot in front |
 | Feet / sandals | `#1a0a0a` | Near-black |
@@ -152,44 +152,44 @@ Tall, geisha-styled woman with a dramatically stretched neck. Her base form make
 | Face | white painted, red eyes, dark lips/teeth | TODO: custom face decal |
 | Arm tattoos (dragons, waves) | dark | TODO: decal uploads |
 
-### Passive — Hidden Hunger
+### Passive: Hidden Hunger
 
 When Rokurokubi is within 40 studs of a Warden, that Warden hears a low, terrifying stomach growl. Her own body gives her away.
 
-### Q — Neck Wrap (29s cooldown, 2s windup)
+### Q: Neck Wrap (29s cooldown, 2s windup)
 
 She shoots her neck out and wraps around the nearest Warden in front of her. The victim is stuck and can't move. They take 2 HP per second while trapped, up to 60 seconds max.
 
-**Escape:** mash space (PC) or tap the on-screen escape button (mobile) — **11 presses** to break free.
+**Escape:** mash space (PC) or tap the on-screen escape button (mobile): **11 presses** to break free.
 
 **Teammate help:** if another Warden hits Rokurokubi (e.g. Momotaro's Katana), the wrap breaks immediately.
 
 | Detail | Value |
 | --- | --- |
-| Range | 30 studs (spec says 3 but that's melee — using 30; tune freely) |
+| Range | 30 studs (spec says 3 but that's melee, so using 30; tune freely) |
 | Damage per second | 2 |
 | Max wrap time | 60 seconds |
 | Mash count to escape | 11 |
 
-### M1 (left click) — Bite (1s cooldown, 0.3s windup)
+### M1 (left click): Bite (1s cooldown, 0.3s windup)
 
 Up-close melee bite that causes Bleed: 2 HP/sec for 10 seconds. Biting again refreshes the bleed timer; she can stack bleed up to **2 times**. Bite always breaks her disguise.
 
-### R — Disguise (20s cooldown, 5s charge-up, lasts 19 seconds)
+### R: Disguise (20s cooldown, 5s charge-up, lasts 19 seconds)
 
-A picker UI opens — Rokurokubi taps any in-round Warden (including dead ones) to copy. After the 5-second charge-up, she takes on that Warden's full appearance (body + name).
+A picker UI opens, and Rokurokubi taps any in-round Warden (including dead ones) to copy. After the 5-second charge-up, she takes on that Warden's full appearance (body + name).
 
 **During charge-up she is frozen** and can't move.
 
 **While disguised:**
 - She can see all Wardens through walls (highlighted to her only).
-- Her eyes glow briefly every few seconds — that's the tell Wardens can spot.
+- Her eyes glow briefly every few seconds, and that's the tell Wardens can spot.
 - Taking any damage breaks the disguise.
 - Using Bite breaks the disguise.
 - She can do Errands like a real Warden, but she can also sabotage them.
 - Inuta the dog still detects her (dogs aren't fooled).
 
-### Q while disguised — Strangle (no cooldown, drops disguise on use)
+### Q while disguised: Strangle (no cooldown, drops disguise on use)
 
 She grabs the nearest Warden by the throat for 2 seconds. Deals 1 HP per second (2 damage total). A teammate hitting her interrupts. Victim can't fight back.
 
@@ -223,47 +223,47 @@ Glitchy, glowing schoolgirl monstrosity in a dirty Japanese elementary-school un
 
 | Element | Color | Notes |
 | --- | --- | --- |
-| Skin (head, arms, legs) | `#c81818` Neon | Deep red, glowing — binary pattern tiled from asset `37444347` |
-| Sailor uniform top (UpperTorso) | `#f5f5f5` | White, solid placeholder — real sailor collar/stains need a shirt upload |
+| Skin (head, arms, legs) | `#c81818` Neon | Deep red, glowing; binary pattern tiled from asset `37444347` |
+| Sailor uniform top (UpperTorso) | `#f5f5f5` | White, solid placeholder; real sailor collar/stains need a shirt upload |
 | Skirt (LowerTorso) | `#1f4d3f` | Dark teal-green |
 | Shoes | `#1a1a1a` | Black mary-janes |
 | Cleaver blade | `#c0c0c0` | Silver, held in right hand |
 | Cleaver handle | `#1a1a1a` | Black |
 | Pop-up particles | `#c81818` | Drifting red particles around her body (placeholder sparkle texture until real pop-up icon uploads) |
-| Hair | red (placeholder) | Avatar Marketplace asset ID `9244114211` — going red for now |
+| Hair | red (placeholder) | Avatar Marketplace asset ID `9244114211`; going red for now |
 | Face | red glitch, no clear features | TODO: custom face decal |
-| Knee socks (white, dirty) | — | TODO: needs shirt/pants template with socks baked in |
+| Knee socks (white, dirty) |  | TODO: needs shirt/pants template with socks baked in |
 
-### Passive — Auto Connect
+### Passive: Auto Connect
 
-Hotspots are placed around the map at round start (4 placeholder spawns for now; will be repositioned by the team in Studio later). Girl A can teleport to any Hotspot by clicking it **while in Incognito Mode**. Wardens can deactivate Hotspots by completing a task — the tasks haven't been built yet ("building library books" or "collecting spirits" are candidates).
+Hotspots are placed around the map at round start (4 placeholder spawns for now; will be repositioned by the team in Studio later). Girl A can teleport to any Hotspot by clicking it **while in Incognito Mode**. Wardens can deactivate Hotspots by completing a task; the tasks haven't been built yet ("building library books" or "collecting spirits" are candidates).
 
-### M1 (left click) — Slash (1.5s cooldown)
+### M1 (left click): Slash (1.5s cooldown)
 
 > Range: 10 studs · Damage: 15
 
 She lunges forward slightly with her cleaver, hitting any Warden caught in the swing for 15 damage.
 
-### Q — Breach of Privacy (25s cooldown)
+### Q: Breach of Privacy (25s cooldown)
 
-> "This ad blocker doesn't do jack!" — Anonymous RRC victim
+> "This ad blocker doesn't do jack!" (Anonymous RRC victim)
 
 A pop-up appears on a **completely random** Warden's screen for 7 seconds. While the pop-up is up:
 - Girl A sees that Warden highlighted through walls.
 - Girl A is slowed (Slowness 1).
 - If the Warden closes the pop-up early, they take 25 damage. If they wait it out, no damage.
 
-### E (hold) — Stray Blade (10s cooldown)
+### E (hold): Stray Blade (10s cooldown)
 
-> "You think you're safe?" — Girl A
+> "You think you're safe?" (Girl A)
 
-Hold E to aim — Girl A's movement drops by 25% while aiming. Release E to throw her cleaver forward up to 30 studs over 1 second. First Warden hit takes 35 damage and starts Bleeding 1. The cleaver stops on walls. **The cleaver always returns to her** when the throw ends.
+Hold E to aim; Girl A's movement drops by 25% while aiming. Release E to throw her cleaver forward up to 30 studs over 1 second. First Warden hit takes 35 damage and starts Bleeding 1. The cleaver stops on walls. **The cleaver always returns to her** when the throw ends.
 
-### R — Incognito Mode (15s cooldown, 8 seconds duration)
+### R: Incognito Mode (15s cooldown, 8 seconds duration)
 
-> "Your privacy is a farce." — Girl A
+> "Your privacy is a farce." (Girl A)
 
-Girl A goes invisible to **all other players** (Wardens and other Yokai). She moves at 1.3× her run speed (39). The 3 nearest Hotspots are highlighted to her — clicking any teleports her there and ends Incognito. Pressing R again also ends Incognito early.
+Girl A goes invisible to **all other players** (Wardens and other Yokai). She moves at 1.3× her run speed (39). The 3 nearest Hotspots are highlighted to her, and clicking any teleports her there and ends Incognito. Pressing R again also ends Incognito early.
 
 ---
 
@@ -271,9 +271,9 @@ Girl A goes invisible to **all other players** (Wardens and other Yokai). She mo
 
 Possible round maps (from the design doc):
 
-- **Aokigahara (The Suicide Forest)** — misshapen trees players can walk along to reach high ground
-- **Maruoka Castle** — pillars of flesh inflict status effects when touched
-- **The Red Room** — virtual pocket dimension with teleporters and secret passages
+- **Aokigahara (The Suicide Forest)**: misshapen trees players can walk along to reach high ground
+- **Maruoka Castle**: pillars of flesh inflict status effects when touched
+- **The Red Room**: virtual pocket dimension with teleporters and secret passages
 
 ---
 
@@ -301,16 +301,16 @@ These are the planned characters. The bolded ones exist in code today; the rest 
 
 ## Architecture decisions (locked)
 
-These are set — don't change without a team discussion.
+These are set; don't change without a team discussion.
 
 - **Platform:** PC + mobile (touch buttons via `ContextActionService`)
 - **Polish:** Minimum viable; easy for kids to read and tune
 - **HP:** Roblox's built-in `Humanoid.Health` and `Humanoid:TakeDamage`. No custom HP system.
 - **Round state:** Real `RoundService` (not a stub) with clear extension points for errands and citizens
 - **Disguise target:** Picker UI showing all in-round Wardens
-- **Companions:** Placeholder Parts (brown for Inuta, yellow for Saru). Code checks `ReplicatedStorage/Companions/<name>` first — drop in a Model there and the code uses it instead, no code change needed.
+- **Companions:** Placeholder Parts (brown for Inuta, yellow for Saru). Code checks `ReplicatedStorage/Companions/<name>` first; drop in a Model there and the code uses it instead, no code change needed.
 - **VFX/SFX:** Single `EffectsService` module with empty hook functions. Abilities call `EffectsService:Play("EffectName", position)`. The art team fills in the hooks later.
-- **Bleed:** One shared `BleedService` (not per-character) — Kibi Dango clears all sources with one call.
+- **Bleed:** One shared `BleedService` (not per-character), so Kibi Dango clears all sources with one call.
 
 ---
 
@@ -353,19 +353,19 @@ src/
 
 Things the team should decide as they playtest. Not blockers for the first build.
 
-- [ ] **Errands** — what does a Warden errand look like? ("Building library books", "Collecting spirits" are candidates)
-- [ ] **Citizens** — non-player NPCs the Yokai also target
-- [ ] **Real shop & coin economy** — Girl A is gated by ownership in the long run
-- [ ] **Real Hotspot placements** — replace the 4 placeholder spawns
-- [ ] **Real companion models** — drop Inuta and Saru models into `ReplicatedStorage/Companions/`
-- [ ] **VFX/SFX hooks** — fill in `EffectsService` for each effect name
+- [ ] **Errands:** what does a Warden errand look like? ("Building library books", "Collecting spirits" are candidates)
+- [ ] **Citizens:** non-player NPCs the Yokai also target
+- [ ] **Real shop & coin economy:** Girl A is gated by ownership in the long run
+- [ ] **Real Hotspot placements:** replace the 4 placeholder spawns
+- [ ] **Real companion models:** drop Inuta and Saru models into `ReplicatedStorage/Companions/`
+- [ ] **VFX/SFX hooks:** fill in `EffectsService` for each effect name
 - [ ] **Voice lines for Girl A** (Fiona's idea)
-- [ ] **Real disguise tell** — "eyes glow every few seconds" is currently a red outline; replace with a proper eye-only glow when art's ready
-- [ ] **Per-client Bird's Eye highlights** — currently every player sees the highlights; only Momotaro should
-- [ ] **Pre-round character picker UI** — when a player owns more than one character on their team
+- [ ] **Real disguise tell:** "eyes glow every few seconds" is currently a red outline; replace with a proper eye-only glow when art's ready
+- [ ] **Per-client Bird's Eye highlights:** currently every player sees the highlights; only Momotaro should
+- [ ] **Pre-round character picker UI:** when a player owns more than one character on their team
 
 ---
 
 ## Tuning numbers
 
-All tunable numbers live in `src/ReplicatedStorage/Shared/Constants.lua`. Change a number, hit save, Argon syncs to Studio. Kids can tune without touching any other file.
+All tunable numbers live in `src/ReplicatedStorage/Shared/Constants.lua`. Change a number, save, then paste the file into Roblox Studio at ReplicatedStorage > Shared > Constants (we do not run Argon; see `CLAUDE.md`). Kids can tune without touching any other file.
