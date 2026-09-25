@@ -306,6 +306,7 @@ local abilityIcons = {}   -- one record per icon: the gui pieces + its cooldown 
 local function clearAbilityIcons()
 	for _, icon in ipairs(abilityIcons) do
 		icon.conn:Disconnect()
+		icon.chargesConn:Disconnect()
 		icon.frame:Destroy()
 	end
 	abilityIcons = {}
@@ -459,6 +460,24 @@ local function buildAbilityIcons(characterName)
 		local strokeOuter = makeBorder(0, 12, 2, 0, 6)
 		local strokeInner = makeBorder(4, 8, 1, 0.45, 7)
 
+		-- Uses-left count in the top-right corner, only for abilities that hold charges.
+		local chargesLabel = Instance.new("TextLabel")
+		chargesLabel.AnchorPoint = Vector2.new(1, 0)
+		chargesLabel.Position = UDim2.new(1, -6, 0, 4)
+		chargesLabel.Size = UDim2.fromOffset(28, 20)
+		chargesLabel.BackgroundTransparency = 1
+		chargesLabel.Font = SLOT.bodyFont
+		chargesLabel.TextScaled = true
+		chargesLabel.TextXAlignment = Enum.TextXAlignment.Right
+		chargesLabel.TextColor3 = SLOT.ink
+		chargesLabel.Visible = false
+		chargesLabel.ZIndex = 8
+		chargesLabel.Parent = frame
+		local chargesStroke = Instance.new("UIStroke")
+		chargesStroke.Thickness = 1.5
+		chargesStroke.Color = Color3.fromRGB(0, 0, 0)
+		chargesStroke.Parent = chargesLabel
+
 		local icon = {
 			ability = binding.Ability,
 			frame = frame,
@@ -471,6 +490,7 @@ local function buildAbilityIcons(characterName)
 			readyAt = 0,
 			total = 0,
 			conn = nil,
+			chargesConn = nil,
 		}
 
 		-- When the server stamps a new cooldown, remember when it ends and how long
@@ -493,6 +513,16 @@ local function buildAbilityIcons(characterName)
 		end
 		icon.conn = localPlayer:GetAttributeChangedSignal(attrName):Connect(readAttribute)
 		readAttribute()
+
+		local chargesAttr = "AbilityCharges_" .. binding.Ability
+		local function readCharges()
+			local config = Constants[characterName] and Constants[characterName][binding.Ability]
+			local count = localPlayer:GetAttribute(chargesAttr) or (config and config.Charges)
+			chargesLabel.Visible = count ~= nil
+			chargesLabel.Text = count and ("x" .. count) or ""
+		end
+		icon.chargesConn = localPlayer:GetAttributeChangedSignal(chargesAttr):Connect(readCharges)
+		readCharges()
 
 		table.insert(abilityIcons, icon)
 	end

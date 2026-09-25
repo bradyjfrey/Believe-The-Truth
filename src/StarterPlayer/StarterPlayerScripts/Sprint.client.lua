@@ -25,6 +25,10 @@ local SPEEDS = {
 	Otohime     = {Walk = Constants.Speed.WardenWalk,     Sprint = Constants.Speed.WardenSprint},
 	Rokurokubi  = {Walk = Constants.Speed.RokurokubiWalk, Sprint = Constants.Speed.RokurokubiSprint},
 	GirlA       = {Walk = Constants.Speed.GirlAWalk,      Sprint = Constants.Speed.GirlARun},
+	Tomino      = {Walk = Constants.Speed.TominoWalk,     Sprint = Constants.Speed.TominoSprint},
+	TwoTimePrime = {Walk = Constants.Speed.WardenWalk,    Sprint = Constants.Speed.WardenSprint},
+	Okiku       = {Walk = Constants.Speed.OkikuWalk,      Sprint = Constants.Speed.OkikuSprint},
+	Verity      = {Walk = Constants.Speed.VerityWalk,     Sprint = Constants.Speed.VeritySprint},
 }
 
 local stamina = ST.Max          -- current stamina (0 .. ST.Max)
@@ -63,7 +67,8 @@ RunService.Heartbeat:Connect(function(dt)
 	else
 		-- Refill, after a short pause since we last sprinted.
 		if os.clock() - lastSprintClock >= ST.RegenDelaySeconds then
-			stamina = math.min(ST.Max, stamina + ST.RegenPerSecond * dt)
+			local regenScale = localPlayer:GetAttribute("StaminaRegenScale") or 1
+			stamina = math.min(ST.Max, stamina + ST.RegenPerSecond * regenScale * dt)
 		end
 		if depleted and stamina >= ST.MinToSprint then depleted = false end
 	end

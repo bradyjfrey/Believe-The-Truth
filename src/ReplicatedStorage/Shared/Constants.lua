@@ -217,7 +217,7 @@ Constants.Rokurokubi = {
         -- Bite is bound to left-mouse-button (handled in AbilityInput).
         CooldownSeconds = 1,
         WindupSeconds = 0.3,
-        RangeStuds = 6,
+        RangeStuds = 12,             -- center to center; she floats ~4 studs above a Warden's center, so 6 never landed (fixed 2026-09-24)
         BleedDamagePerSecond = 2,
         BleedDurationSeconds = 10,
         MaxBleedStacks = 2,          -- biting a 3rd time has no extra effect
@@ -342,10 +342,60 @@ Constants.Okiku = {
 }
 
 -------------------------------------------------------------------------------
--- TOMINO (Yokai, DEVELOPER-marked — kit is specced in CHECKLIST.md, not built)
+-- TOMINO (Yokai, DEVELOPER-marked)
 -------------------------------------------------------------------------------
 Constants.Tomino = {
     MaxHealth = 1750,
+
+    WhipLash = {
+        CooldownSeconds = 1.3,       -- kids' number
+        Damage = 24,                 -- kids' number; 5 lashes downs a 110 HP survivor
+        RangeStuds = 20,             -- reach in front of him; he's 21 studs tall and the whip is long
+        SwingWidthStuds = 8,         -- how far to EACH side the lash still counts
+        PassThroughGraceStuds = 4,   -- targets this far behind his root still count (point-blank hits)
+        BleedDamagePerSecond = 2,
+        BleedDurationSeconds = 5,
+        MaxBleedStacks = 1,          -- re-lashing refreshes the timer instead of stacking
+    },
+
+    WhipSlam = {
+        CooldownSeconds = 24,        -- kids' number
+        WindupSeconds = 0.4,         -- the whip rises before it lands, so survivors get a tell
+        Damage = 27,                 -- kids' number
+        RadiusStuds = 30,            -- Brady 2026-09-24; kids said 4-6, which barely cleared his own body
+        RagdollSeconds = 2,          -- same knockdown length as the banana slip
+    },
+
+    PinTrap = {
+        CooldownSeconds = 32,        -- kids' number
+        PlaceForwardStuds = 8,       -- how far in front of him the pin goes down
+        TriggerPadSize = Vector3.new(14, 3, 3), -- invisible tripwire: wide across his facing, thin along it
+        TripSeconds = 2,             -- knockdown length when a survivor walks into it
+        LifetimeSeconds = 60,        -- unsprung traps vanish after this; placing a new one also removes the old
+    },
+
+    BombPin = {
+        Charges = 3,                 -- kids' "3 pins"; shown as a count on the HUD icon
+        CooldownSeconds = 31,        -- per pin: each spent pin comes back on its own after this long
+        ThrowRangeStuds = 60,        -- max throw distance; a wall in the way stops it short
+        FlightSeconds = 0.5,         -- time in the air; the patch (and its damage) starts on landing
+        ArcHeightStuds = 12,         -- how high above the straight line the throw peaks
+        SpinsPerSecond = 3,          -- end-over-end tumble while flying; visual only
+        PoolRadiusStuds = 10,        -- size of the blood patch
+        DamagePerSecond = 3,         -- kids' number; overlapping patches stack
+        PoolSeconds = 8,             -- how long each patch stays harmful
+    },
+
+    Effects = {
+        FlashSeconds = 0.3,          -- how long one-shot visuals (slam ring, lash crack) stay solid
+        LingerSeconds = 1,           -- extra time for particles already in the air to finish fading
+    },
+
+    PanicStruck = {
+        RangeStuds = 40,             -- survivors this close have slowed stamina refill; matches Rokurokubi's growl range
+        RegenScale = 0.5,            -- multiplier on Stamina.RegenPerSecond while in range; does NOT speed up draining
+        CheckEverySeconds = 0.5,     -- how often range is re-checked, so the debuff lags leaving by up to this long
+    },
 }
 
 -------------------------------------------------------------------------------

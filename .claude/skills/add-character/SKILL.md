@@ -20,8 +20,11 @@ Constants, Types, the client input map, and the HUD.
    - add it to the `characterModules` map (`[Types.Character.<Name>] = <Name>`)
    - add an `elseif characterName == Types.Character.<Name> then` branch in `applyCharacterStats`
      that sets `MaxHealth`/`Health`/`WalkSpeed` and calls `<Name>:StartPassives(player)`.
-5. **Bind keys** in `AbilityInput.client.lua` (a new keyed list under the character name).
+5. **Bind keys** in `src/ReplicatedStorage/Shared/AbilityBindings.lua` (a new keyed list under the
+   character name; the HUD icons read the same list).
 6. **Add a HUD label:** an entry in `CHARACTER_LABEL` in `HUD.client.lua`.
+7. **Let them sprint:** add a row to `SPEEDS` in `Sprint.client.lua`. A character missing there
+   silently can't sprint; four characters went a month that way (fixed 2026-09-24).
 
 ## Gotchas
 - **Each `applyCharacterStats` branch must use ITS OWN `Constants.<Name>.MaxHealth`.** A past bug

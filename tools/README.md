@@ -65,6 +65,7 @@ live at the top, so dressing B after A silently applies A's float or A's overrid
 | `dress-girla.luau` / `dress-momotaro.luau` / `dress-otohime.luau` / `dress-rokurokubi.luau` | The original recipes for the first four, and the record of how each was built. |
 | `fix-momotaro-rig.luau` | Renames Momotaro's root joint `Root Hip`→`RootJoint` + the duplicate costume `Torso`. **Re-run if his model is ever re-exported** (the bad names come back). |
 | `rebuild-rokurokubi-neck.luau` | Rebuilds the NeckJoint Motor6Ds on Rokurokubi's 12 neck segments, in place. **Re-run if her model is ever re-exported** and the neck goes stiff. |
+| `build-effects.luau` | Builds code-made effect templates (parts + particles, built-in textures, no uploads) straight into `ReplicatedStorage > Effects`. No selection needed. Tags what it makes `BuiltByTool` so re-running rebuilds its own templates and **never overwrites a hand-built one** (skipped with a warning). Add new code-made effects as another entry in its `RECIPES` table rather than a new file. Currently: Tomino's six. |
 | `reweld.luau` | Re-welds selected clothing part(s) to a body part (edit `TARGET` at the top). The fix-up tool for bad welds (e.g. Okiku). |
 | `rigdogs.luau` | Adds a quadruped rig (HumanoidRootPart + joints) to the dog models. Only needed if we ever give the dogs a real walk cycle (wishlist). |
 

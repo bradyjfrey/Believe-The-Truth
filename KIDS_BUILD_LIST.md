@@ -29,7 +29,7 @@ placing it, playing it, and cleaning it up.
 - [ ] **`MomotaroInutaDeploy`**: dust puff when the dogs drop in
 - [ ] **`MomotaroInutaBark`**: a visual bark, like a ring or burst from the muzzle
 - [ ] **`MomotaroBirdsEyeView`**: something glowy on Kijiro when his reveal pings
-- [ ] **`GirlASlashHit`**: impact when the hatchet actually connects (the swing VFX exists)
+- [x] **`GirlASlashHit`** (done: Claude built the visual on top of your sound): impact when the hatchet actually connects (the swing VFX exists)
 
 ## Effects for abilities coming soon (build in parallel):
 

@@ -51,8 +51,6 @@ In progress / next up (full detail in `CHECKLIST.md`):
   hand onto his six R6 joints.
 - **Kasa Obake, the lobby talk NPC.** Model is built and anchored; the
   ProximityPrompt and dialogue UI wait on the kids finishing his lines.
-- **Bobzilla collision groups:** trees passable, buildings solid, so a character
-  his size can still move through the map. Designed and estimated, not built.
 - **THE YOROZUYA** (the store): economy fully designed in `SKIN_STORE_MONEY.md`.
   **Omamori** currency, earned in-game only, **never Robux/real money**. Build order:
   UI-only demo → free locker with DataStore → currency and prices.

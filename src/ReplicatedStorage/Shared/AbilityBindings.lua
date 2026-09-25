@@ -38,6 +38,12 @@ local AbilityBindings = {
 	Bobzilla = {
 		{Ability = "HeatRay", Key = Enum.KeyCode.Q, Label = "Heat Ray"},
 	},
+	Tomino = {
+		{Ability = "WhipLash", Key = Enum.UserInputType.MouseButton1, Label = "Lash"},
+		{Ability = "WhipSlam", Key = Enum.KeyCode.Q,                  Label = "Slam"},
+		{Ability = "PinTrap",  Key = Enum.KeyCode.R,                  Label = "Pin Trap"},
+		{Ability = "BombPin",  Key = Enum.KeyCode.T,                  Label = "Bomb Pin"},
+	},
 }
 
 return AbilityBindings

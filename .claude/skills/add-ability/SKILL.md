@@ -26,11 +26,15 @@ dispatches to the character module.
    ```
 3. **Build its effect** (optional): call `EffectsService:Play("<Character><Name>", ...)` and add a
    matching template in `ReplicatedStorage.Effects` named EXACTLY that (see the `build-effect` skill).
-4. **Bind the key** in `AbilityInput.client.lua`. The `BINDINGS` table is keyed by character name;
-   add an entry to that character's list:
-   `{Action = "<Character><Name>", Ability = "<Name>", Key = Enum.KeyCode.X, Label = "…"}`.
+4. **Bind the key** in `src/ReplicatedStorage/Shared/AbilityBindings.lua` (NOT `AbilityInput`; the
+   list moved to this shared module so the HUD's cooldown icons and the key binds read the same rows).
+   Add a row to that character's list:
+   `{Ability = "<Name>", Key = Enum.KeyCode.X, Label = "…"}`.
    `Key` can be a `KeyCode` OR a `UserInputType` (e.g. `MouseButton1`); add `Hold = true` for
-   hold-to-charge abilities.
+   hold-to-charge abilities, `HudOnly = true` if another script owns the key.
+   - **Limited uses** ("3 pins"): call `AbilityModule.useCharge(player, "<Name>", max, rechargeSeconds)`
+     instead of `isOffCooldown`/`startCooldown`, and put `Charges` + `CooldownSeconds` (per charge) in
+     Constants. The HUD shows the count automatically. See Tomino's `BombPin`.
 5. **If the ability needs a new Remote** (e.g. a client mini-game like button-mash, or a
    server→client broadcast): add one `ensureRemote("Name", "RemoteEvent")` line in Bootstrap's
    remotes block. Client→server needs an `OnServerEvent:Connect` handler; server→all-clients uses

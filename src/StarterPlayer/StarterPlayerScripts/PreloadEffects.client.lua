@@ -29,3 +29,16 @@ task.spawn(function()
 	ContentProvider:PreloadAsync(toLoad)
 	print("[PreloadEffects] all effect assets warmed up (" .. #toLoad .. " instances)")
 end)
+
+-- One-shot effects: emitters tagged with a "Burst" count are fired HERE, on each player's own
+-- screen, as the effect arrives. Emit() called on the server is never shown to players.
+workspace.DescendantAdded:Connect(function(d)
+	if d:IsA("ParticleEmitter") then
+		local burst = d:GetAttribute("Burst")
+		if burst then
+			task.defer(function()
+				if d.Parent then d:Emit(burst) end
+			end)
+		end
+	end
+end)

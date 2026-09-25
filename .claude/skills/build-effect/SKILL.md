@@ -33,7 +33,25 @@ Create an invisible **anchored mover Part**; `Play` the effect with `AttachTo = 
 in a `Heartbeat` loop (`startPos + lookVector * (range * t)`). First target within `HitRadius` takes
 the hit, then destroy the mover.
 
+## Building it in code instead of by hand
+`tools/build-effects.luau` (Command Bar) builds templates from parts + ParticleEmitters with Roblox's
+built-in textures (`rbxasset://textures/particles/...`), so nothing needs uploading. Add a recipe to
+its `RECIPES` table; it never overwrites a hand-built template.
+- **One-shot vs continuous:** most abilities `Play` by position only, which keeps emitters running for
+  the whole lifetime (default 2.5s). For a hit/burst, give the emitter a `Burst` attribute (particle
+  count; the tool's `emitter(parent, props, burstCount)`): it fires once and never turns on. Each
+  player's `PreloadEffects.client.lua` fires it, because **`Emit()` called on the server is never
+  shown to players** (only `Enabled = true` replicates). Never add a server-side `Emit` for a burst. For an
+  effect that should last exactly an ability's wait, add a `LIFETIMES` entry that reads the Constants
+  number.
+
 ## Gotchas
+- **Effects played at a character's root start INSIDE the body.** Slow or small particles stay
+  hidden in the model (Rokurokubi's first pass showed nothing). Emit from a core bigger than the
+  body, with outward speed, and keep hit flashes big and bright.
+- **EffectsService places by the FIRST BasePart it finds and resets that part's rotation.** It
+  ignores the template's own PrimaryPart. A template whose first part is rotated (e.g. a cylinder
+  turned flat into a disc) ends up standing on its edge. Create an unrotated part first.
 - **Fixed-spot placement re-centers by BOUNDING BOX** so the visual middle sits on the target. Most
   templates are built off-center, so without this they look shoved to one side or behind the target.
 - **Use `AttachTo` whenever the caster moves** (dashes/lunges) or the effect should track a

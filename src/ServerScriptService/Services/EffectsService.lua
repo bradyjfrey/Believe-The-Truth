@@ -25,10 +25,14 @@
 --   GIRL A: GirlASlash, GirlASlashHit, GirlABreachPopup, GirlAStrayBladeAim, GirlAStrayBladeThrow,
 --     GirlAStrayBladeImpact, GirlAIncognitoStart, GirlAIncognitoEnd, GirlAHotspotTeleport
 --   OTOHIME: OtohimeHealingPulse, OtohimeDarkMoon
+--   TOMINO: TominoWhipLash, TominoWhipLashHit, TominoWhipSlam, TominoPinTrap, TominoPinTrapTrip,
+--     TominoBombPinThrow, TominoBombPin (all built by tools/build-effects.luau)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 local Debris = game:GetService("Debris")
+
+local Constants = require(ReplicatedStorage.Shared.Constants)
 
 local EffectsService = {}
 
@@ -41,6 +45,11 @@ local LIFETIMES = {
 	OtohimeHealingPulse = 2.5,
 	OtohimeDarkMoon = 3,
 	RokurokubiHiddenHungerGrowl = 4,   -- sound-only; long enough that the growl isn't cut off
+	-- Effects that run for the whole of an ability's wait, so they last exactly that long.
+	MomotaroSaruEat = Constants.Momotaro.MessyEater.SaruEatSeconds,
+	RokurokubiNeckWrapWindup = Constants.Rokurokubi.NeckWrap.WindupSeconds,
+	RokurokubiDisguiseChargeUp = Constants.Rokurokubi.Disguise.ChargeUpSeconds,
+	RokurokubiStrangle = Constants.Rokurokubi.Strangle.ChokeSeconds,
 }
 
 -- The folder all templates live in. Looked up lazily so this module loads cleanly at startup.
@@ -83,9 +92,13 @@ local function particleBurst(emitter, burstSeconds)
 end
 
 -- Switch on every particle emitter (with an instant burst) and play every sound.
+-- An emitter with a "Burst" attribute (a particle count) is a one-shot and is skipped here: each
+-- player's PreloadEffects.client.lua fires it, because Emit() on the server never reaches players.
 local function enablePlayback(root, burstSeconds)
 	for _, d in ipairs(root:GetDescendants()) do
-		if d:IsA("ParticleEmitter") then
+		if d:IsA("ParticleEmitter") and d:GetAttribute("Burst") then
+			continue
+		elseif d:IsA("ParticleEmitter") then
 			d.Enabled = true
 			if d.Rate and d.Rate > 0 then d:Emit(particleBurst(d, burstSeconds)) end
 		elseif d:IsA("Sound") then
@@ -155,6 +168,21 @@ function EffectsService:Play(effectName, position, extras)
 	clone.Parent = container
 
 	local anchor = findAnchorPart(container)
+
+	-- A sound-only template (e.g. PlayerKilled) has no part, so it would play at the world origin
+	-- where nobody hears it. Give this copy an invisible part and move its sounds onto it, so the
+	-- sound comes from where the effect happens. The template itself is never changed.
+	if not anchor and not extras.AttachTo then
+		anchor = Instance.new("Part")
+		anchor.Name = "SoundHolder"
+		anchor.Size = Vector3.new(1, 1, 1)
+		anchor.Transparency = 1
+		anchor.Parent = container
+		for _, d in ipairs(container:GetDescendants()) do
+			if d:IsA("Sound") then d.Parent = anchor end
+		end
+	end
+
 	if anchor then container.PrimaryPart = anchor end
 
 	if extras.Scale and anchor then container:ScaleTo(extras.Scale) end
