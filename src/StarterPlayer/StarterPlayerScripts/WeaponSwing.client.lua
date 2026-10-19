@@ -29,6 +29,10 @@ local WeaponSwing = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Weap
 --   TwoHanded    : if true, the OTHER arm swings along too (both grip the weapon).
 --   Axis         : which way the arm swings -- "X", "Y", or "Z". If the swing goes the wrong
 --                  direction (e.g. sideways instead of overhead), try a different letter.
+--   Hold         : seconds to keep the finished pose before snapping back (a stab lingers).
+--   Joints       : INSTEAD of PrimaryArm/TwoHanded: a list of {Name, Axis, Windup, Swing, Offset}
+--                  posing any joints by name (shoulders, hips, Neck, RootJoint). Offset is a
+--                  joint-local translation reached at the end of the swing (e.g. a drop).
 ------------------------------------------------------------------------------
 local CONFIG = {
 	GirlAHatchet = {
@@ -57,6 +61,23 @@ local CONFIG = {
 		PrimaryArm  = "Left",  -- his whip hangs on his left side
 		TwoHanded   = false,
 		Axis        = "X",     -- R15 shoulders pitch forward on X, not Z like R6
+	},
+	-- Two Time Prime's lunge-and-stab, knife in the LEFT hand. Angles are the R6 approximation of the
+	-- kids' posed reference (CHECKLIST, Two Time Prime): torso pitched forward, lead leg forward,
+	-- back leg thrust back, head looking UP at the target. Signs are first guesses; flip one if a
+	-- joint bends the wrong way.
+	TwoTimePrimeStab = {
+		Duration    = 0.5,
+		WindupFrac  = 0.35,
+		Hold        = 0.25,
+		Joints = {
+			{Name = "Left Shoulder",  Axis = "Z", Windup = 20,  Swing = -95},   -- knife arm: back, then thrust
+			{Name = "Right Shoulder", Axis = "Z", Windup = -10, Swing = 35},    -- free arm forward for balance
+			{Name = "Left Hip",       Axis = "Z", Windup = 0,   Swing = -40},   -- lead leg forward
+			{Name = "Right Hip",      Axis = "Z", Windup = 0,   Swing = -35},   -- back leg thrust back
+			{Name = "RootJoint",      Axis = "X", Windup = 5,   Swing = -40, Offset = Vector3.new(0, 0, -1)},  -- lean in + drop
+			{Name = "Neck",           Axis = "X", Windup = 0,   Swing = 35},    -- keeps looking at the target
+		},
 	},
 	TominoWhipSlam = {
 		Duration    = 0.7,     -- windup lines up with Constants.Tomino.WhipSlam.WindupSeconds (0.7 x 0.6 = 0.42s)
@@ -103,62 +124,105 @@ local function angleAt(cfg, t)
 	end
 end
 
+local function findJoint(character, name)
+	local torso = character:FindFirstChild("Torso")
+	if torso and torso:FindFirstChild(name) then return torso[name] end
+	local side, rest = name:match("^(%a+) (%a+)$")
+	if side and rest == "Shoulder" then
+		local upperArm = character:FindFirstChild(side .. "UpperArm")   -- R15 (Tomino)
+		if upperArm then return upperArm:FindFirstChild(side .. "Shoulder") end
+	end
+	for _, d in ipairs(character:GetDescendants()) do
+		if d:IsA("Motor6D") and d.Name == name then return d end
+	end
+	return nil
+end
+
+-- Turns a style into a list of {joint, base, axis, windup, swing, offset} to drive each frame.
+-- Arm styles (PrimaryArm/TwoHanded) become one or two shoulder entries; Joints styles list
+-- every joint by hand with its own angles.
+local function jointPlan(character, cfg)
+	local plan = {}
+	if cfg.Joints then
+		for _, j in ipairs(cfg.Joints) do
+			local joint = findJoint(character, j.Name)
+			if joint then
+				table.insert(plan, {joint = joint, base = restingC0(joint), axis = j.Axis or "Z",
+					windup = j.Windup or 0, swing = j.Swing or 0, offset = j.Offset})
+			end
+		end
+		return plan
+	end
+
+	local otherArm = (cfg.PrimaryArm == "Left") and "Right" or "Left"
+	local primary = findJoint(character, cfg.PrimaryArm .. " Shoulder")
+	if not primary then return plan end
+	local axis = cfg.Axis or "Z"
+	table.insert(plan, {joint = primary, base = restingC0(primary), axis = axis,
+		windup = cfg.WindupAngle, swing = cfg.SwingAngle})
+	if cfg.TwoHanded then
+		local other = findJoint(character, otherArm .. " Shoulder")
+		if other then
+			-- R6 shoulders are built mirrored, so the other arm needs the angle negated to sweep the
+			-- SAME way. R15 shoulders aren't mirrored.
+			local sign = character:FindFirstChild("Torso") and -1 or 1
+			table.insert(plan, {joint = other, base = restingC0(other), axis = axis,
+				windup = sign * cfg.WindupAngle, swing = sign * cfg.SwingAngle})
+		end
+	end
+	return plan
+end
+
 local function playSwing(character, style)
 	local cfg = CONFIG[style]
 	if not cfg or not character then return end
 
-	local otherArm = (cfg.PrimaryArm == "Left") and "Right" or "Left"
-	local function shoulder(side)
-		local torso = character:FindFirstChild("Torso")
-		if torso then return torso:FindFirstChild(side .. " Shoulder") end
-		local upperArm = character:FindFirstChild(side .. "UpperArm")   -- R15 (Tomino)
-		return upperArm and upperArm:FindFirstChild(side .. "Shoulder")
-	end
-
-	-- The primary arm holds the weapon; the other arm only moves if it's a two-handed swing.
-	local primaryShoulder = shoulder(cfg.PrimaryArm)
-	local otherShoulder   = cfg.TwoHanded and shoulder(otherArm) or nil
-	if not primaryShoulder then return end
-	local otherSign = character:FindFirstChild("Torso") and -1 or 1
-
-	-- Grab each arm's resting C0 so we rotate off it and can restore it cleanly afterward.
-	local axis = cfg.Axis or "Z"
-	local primaryBase = restingC0(primaryShoulder)
-	local otherBase   = otherShoulder and restingC0(otherShoulder) or nil
+	local plan = jointPlan(character, cfg)
+	if #plan == 0 then return end
 
 	-- New swing token; any previous swing on this character sees a stale token and stops.
 	local myToken = {}
 	activeToken[character] = myToken
+	character:SetAttribute("Swinging", true)
 
 	local function restore()
-		primaryShoulder.C0 = primaryBase
-		if otherShoulder then otherShoulder.C0 = otherBase end
+		for _, entry in ipairs(plan) do entry.joint.C0 = entry.base end
+		if activeToken[character] == myToken then
+			activeToken[character] = nil
+			character:SetAttribute("Swinging", nil)
+		end
 	end
 
+	local total = cfg.Duration + (cfg.Hold or 0)
 	local start = tick()
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		-- Stop if a newer swing started, or the character/joints went away.
-		if activeToken[character] ~= myToken or not primaryShoulder.Parent then
+		if activeToken[character] ~= myToken or not plan[1].joint.Parent then
 			conn:Disconnect()
 			return
 		end
 
-		local t = (tick() - start) / cfg.Duration
-		if t >= 1 then
-			-- Done: snap the arms back to their resting pose (default animation resumes).
+		local elapsed = tick() - start
+		if elapsed >= total then
+			-- Done: snap everything back to its resting pose (default animation resumes).
 			restore()
-			if activeToken[character] == myToken then activeToken[character] = nil end
 			conn:Disconnect()
 			return
 		end
 
-		-- Pose by rotating each shoulder's C0 off its rest pose (the animator can't fight C0).
-		local degrees = angleAt(cfg, t)
-		primaryShoulder.C0 = primaryBase * rotateOn(axis, math.rad(degrees))
-		-- R6 shoulders are built mirrored, so the other arm needs the angle negated to sweep the SAME
-		-- way. R15 shoulders aren't mirrored.
-		if otherShoulder then otherShoulder.C0 = otherBase * rotateOn(axis, math.rad(otherSign * degrees)) end
+		-- Pose by rotating each joint's C0 off its rest pose (the animator can't fight C0). After
+		-- Duration the final pose holds for cfg.Hold seconds.
+		local t = math.min(elapsed / cfg.Duration, 1)
+		for _, entry in ipairs(plan) do
+			local degrees = angleAt({WindupFrac = cfg.WindupFrac, WindupAngle = entry.windup, SwingAngle = entry.swing}, t)
+			local cf = entry.base
+			if entry.offset then
+				local progress = (t < cfg.WindupFrac) and 0 or easeIn((t - cfg.WindupFrac) / (1 - cfg.WindupFrac))
+				cf = cf * CFrame.new(entry.offset * progress)
+			end
+			entry.joint.C0 = cf * rotateOn(entry.axis, math.rad(degrees))
+		end
 	end)
 end
 

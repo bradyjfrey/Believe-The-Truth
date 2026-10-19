@@ -16,6 +16,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local Constants = require(ReplicatedStorage.Shared.Constants)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Cutscenes = require(ReplicatedStorage.Shared.Cutscenes)
 local EffectsService = require(ServerScriptService.Services.EffectsService)
 
 local RoundService = {}
@@ -183,6 +184,7 @@ end
 
 local state = Types.RoundState.Lobby
 local roundEndTime = 0
+local actionsAllowedAt = 0   -- tick() when abilities unlock after the intro cutscenes
 local lobbyEndTime = 0
 
 -- playerCharacter[userId] = "Momotaro" / "Rokurokubi" / "GirlA"
@@ -236,6 +238,38 @@ end
 
 function RoundService:IsInRound()
 	return state == Types.RoundState.InRound
+end
+
+-- False while the round-start intro cutscenes are still playing, so nobody gets a free hit on a
+-- player who's watching their screen.
+function RoundService:IsActionAllowed()
+	return state == Types.RoundState.InRound and tick() >= actionsAllowedAt
+end
+
+-- Plays a scene on ONE player's screen. The stage can be far from the player, and with streaming
+-- on, their client may not have that part of the map loaded, so the server points the player's
+-- streaming at the stage for the length of the scene and sends the stage position along.
+-- Returns how long the scene takes including fades, or 0 if there is no such scene.
+function RoundService:PlayCutscene(player, kind, characterName)
+	local group = Cutscenes[kind]
+	local scene = group and group[characterName]
+	local remote = ReplicatedStorage.Remotes:FindFirstChild("Cutscene")
+	if not scene or not remote then return 0 end
+
+	local seconds = Cutscenes.duration(scene) + 4 * Constants.Cutscene.FadeSeconds
+	local stage = workspace:FindFirstChild("CutsceneStage", true)
+	task.spawn(function()
+		local stageCFrame = nil
+		if stage and stage:IsA("BasePart") then
+			stageCFrame = stage.CFrame * CFrame.new(0, stage.Size.Y / 2, 0)
+			player.ReplicationFocus = stage
+			pcall(function() player:RequestStreamAroundAsync(stage.Position, 3) end)
+		end
+		remote:FireClient(player, kind, characterName, stageCFrame)
+		task.wait(seconds)
+		if player.Parent and player.ReplicationFocus == stage then player.ReplicationFocus = nil end
+	end)
+	return seconds
 end
 
 function RoundService:GetTeam(player)
@@ -460,7 +494,17 @@ function RoundService:_enterRound()
 	-- skip making placeholders.
 	self:_spawnPlaceholderHotspots()
 
-	roundEndTime = tick() + Constants.Round.RoundLengthSeconds
+	-- Intro cutscenes: each player watches their own character's scene while the clock and
+	-- abilities wait for the longest one to finish.
+	local introSeconds = 0
+	if Constants.Cutscene.IntroEnabled then
+		for _, player in ipairs(players) do
+			introSeconds = math.max(introSeconds, self:PlayCutscene(player, "Intro", playerCharacter[player.UserId]))
+		end
+	end
+	actionsAllowedAt = tick() + introSeconds
+
+	roundEndTime = actionsAllowedAt + Constants.Round.RoundLengthSeconds
 	publish("RoundState", Types.RoundState.InRound)
 	publish("SecondsRemaining", Constants.Round.RoundLengthSeconds)
 end
@@ -619,7 +663,7 @@ function RoundService:Tick()
 			publish("HasEnoughPlayers", true)
 		end
 	elseif state == Types.RoundState.InRound then
-		publish("SecondsRemaining", math.max(0, math.floor(roundEndTime - tick())))
+		publish("SecondsRemaining", math.clamp(math.floor(roundEndTime - tick()), 0, Constants.Round.RoundLengthSeconds))
 		local winner = self:_checkWinConditions()
 		if winner then
 			self:_enterEnding(winner)

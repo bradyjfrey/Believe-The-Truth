@@ -38,7 +38,7 @@ end
 
 function AbilityService:Handle(player, abilityName, params)
     -- Bail early on any of the gate checks.
-    if not roundService or not roundService:IsInRound() then return end
+    if not roundService or not roundService:IsActionAllowed() then return end
 
     local character = player.Character
     if not character then return end

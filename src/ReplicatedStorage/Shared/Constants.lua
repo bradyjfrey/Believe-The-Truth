@@ -20,6 +20,15 @@ Constants.Round = {
     EliminatedRespawnSeconds = 3,    -- how long a caught player lies there before waking up in the lobby
 }
 
+Constants.Cutscene = {
+    IntroEnabled = true,             -- play each player's intro scene at round start (abilities + clock wait for it)
+    FadeSeconds = 0.35,              -- black fade on each side of a scene, hides the camera cut
+    DebugKeys = {                    -- test keys: press to play that intro any time, for tuning; empty table turns them off.
+        [Enum.KeyCode.Eight] = "Momotaro",    -- number row: F-keys are unreliable (F9 is Roblox's console, F7 never arrived on Brady's Mac)
+        [Enum.KeyCode.Seven] = "Rokurokubi",
+    },
+}
+
 Constants.DeveloperOnlyCharacters = {
     Okiku = true,
     Tomino = true,
@@ -253,6 +262,15 @@ Constants.Rokurokubi = {
 Constants.GirlA = {
     MaxHealth = 1700,
 
+    Hover = {
+        FloatLift = 2.5,             -- studs added to HipHeight at spawn so she glides instead of walking
+        BobStuds = 0.35,             -- gentle up/down while floating (her own client moves HipHeight)
+        BobPerSecond = 1.2,          -- bob cycles per second
+        DragArmDegrees = -50,        -- hatchet arm trailing behind her; flip the sign if it goes forward
+        SwayDegrees = 6,             -- extra arm swing while she moves
+        SwayPerSecond = 2.5,
+    },
+
     Slash = {
         -- Bound to left-mouse-button.
         CooldownSeconds = 1.5,
@@ -403,6 +421,10 @@ Constants.Tomino = {
 -------------------------------------------------------------------------------
 Constants.TwoTimePrime = {
     MaxHealth = 110,             -- a survivor, so same fragile range as Momotaro/Otohime
+
+    Stab = {
+        CooldownSeconds = 0.8,       -- the lunge pose only, no damage yet: his kit isn't designed
+    },
 }
 
 -------------------------------------------------------------------------------

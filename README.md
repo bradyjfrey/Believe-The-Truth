@@ -7,12 +7,12 @@ with a shared lobby to hang out in between. PC + mobile.
 Built by Brady with an art/design team of young teens who hand-build every character,
 map, and effect in Roblox Studio. The code lives here; the models live in Studio.
 
-## Current status (2026-08-05)
+## Current status (2026-10-18)
 
 **Private / testing era: playable prototype, not yet public.** The core game works
 end-to-end and has been playtested multiplayer: lobby → character select → round →
 win/lose → back to lobby. Nine characters are pickable and spawn in their real
-kid-built models; five of them have abilities.
+kid-built models; six of them have abilities, and every ability has a visual effect.
 
 Done and tested:
 
@@ -31,31 +31,41 @@ Done and tested:
   - **Bobzilla** (Yokai, the free killer pick): Heat Ray, a mouth beam with a
     telegraphed windup glow, a burning trail where it lands, and a slow-to-a-crawl
     cost while it fires. Deliberately giant, deliberately slow, can't hide.
-- **Four more characters dressed and pickable, abilities not built yet:** Okiku,
-  Tomino, Verity (Yokai) and Two Time Prime (Warden). They spawn in their real
-  models with their own HP and walk speeds, and their picker cards show in a gold
-  "developer" theme (`Constants.DeveloperOnlyCharacters`) so playtesters can tell
-  the unfinished ones apart.
-- **Combat feel:** code-driven weapon swings (no uploaded animations), visual-effects
-  pipeline (`EffectsService`) with the kids' VFX batch installed, effect preloading,
-  elimination-to-lobby on death (eliminated players shop/hang out until next round).
+  - **Tomino** (Yokai): Whip Lash, Whip Slam shockwave, Pin Trap tripwire, Bomb Pin
+    (3 charges, thrown, leaves a blood patch); Panic Struck passive slows nearby
+    survivors' stamina refill. The only R15 character.
+- **Three more characters dressed and pickable, abilities not designed yet:** Okiku,
+  Verity (Yokai) and Two Time Prime (Warden, who has a lunge-stab pose on left-click
+  but no damage). They spawn in their real models with their own HP and walk speeds;
+  their picker cards (and Tomino's, pending purchase gating) show in a gold
+  "developer" theme (`Constants.DeveloperOnlyCharacters`).
+- **Combat feel:** code-driven weapon swings and poses (no uploaded animations),
+  visual-effects pipeline (`EffectsService`) with every ability's effect in place
+  (kids' hand-built templates plus code-built ones from `tools/build-effects.luau`),
+  effect preloading, elimination-to-lobby on death. Girl A floats and drags her
+  hatchet behind her.
+- **Cutscenes:** scripted intro scenes (camera + stand-in characters on a
+  `CutsceneStage` part, name card, fades) that play for everyone at round start while
+  the clock and abilities wait. Momotaro's and Rokurokubi's intros are done; test
+  keys 8 and 7 play them from the lobby.
 - **HUD & lobby life:** health bar (colorblind-safe by design), sprint + stamina bar,
   ability cooldown squares, a lobby whiteboard you can actually draw on, shopkeeper NPC
   placed in the lobby house.
 
 In progress / next up (full detail in `CHECKLIST.md`):
 
-- **Abilities for the four developer-marked characters:** Tomino's kit is fully
-  specced in `CHECKLIST.md`; Okiku, Verity and Two Time Prime are statted stubs
-  waiting on a design. Two Time Prime also needs his crouch/stab pose authored by
-  hand onto his six R6 joints.
-- **Kasa Obake, the lobby talk NPC.** Model is built and anchored; the
-  ProximityPrompt and dialogue UI wait on the kids finishing his lines.
+- **Win and loss cutscenes** in the end-of-round pause (the intro system is built;
+  these are new scenes). Also still to see: the intro hookup in a real 2-player round.
+- **Waiting on the kids:** kits for Okiku, Verity and Two Time Prime; Girl A's
+  computer-screen prop and Tomino's asylum-doorway prop for their intros; Kasa Obake's
+  dialogue lines for the lobby talk NPC.
+- **Getting the kids playing:** the experience is published under Ava's account
+  (`10041070796`); setting the audience to Limited there is the remaining step.
+  Transfer to the community is paused.
 - **THE YOROZUYA** (the store): economy fully designed in `SKIN_STORE_MONEY.md`.
   **Omamori** currency, earned in-game only, **never Robux/real money**. Build order:
   UI-only demo → free locker with DataStore → currency and prices.
-- Parked: custom walk animation (waits on the Roblox group migration), killer intro
-  cinematics, giant skeleton boss.
+- Parked: giant skeleton boss.
 
 ## How this repo works (read before touching anything)
 
@@ -98,11 +108,11 @@ Other standing rules (details in `CLAUDE.md`):
 
 | Folder | Studio service | Contents |
 |---|---|---|
-| `src/ReplicatedStorage/Shared/` | ReplicatedStorage > Shared | Modules both server and client require: `Constants.lua` (every tunable number), `Types.lua` (Character/Team enums), `AbilityModule.lua` (cooldown helpers), `AbilityBindings.lua` (one shared keybind list so input and HUD can't drift), `CharacterAppearance.lua`. |
+| `src/ReplicatedStorage/Shared/` | ReplicatedStorage > Shared | Modules both server and client require: `Constants.lua` (every tunable number), `Types.lua` (Character/Team enums), `AbilityModule.lua` (cooldown helpers), `AbilityBindings.lua` (one shared keybind list so input and HUD can't drift), `Cutscenes.lua` (intro/win/loss scene data), `CharacterAppearance.lua`. |
 | `src/ServerScriptService/` | ServerScriptService | `Bootstrap.server.lua` is the ONE boot script: creates Remotes, wires services, applies per-character stats on spawn, runs the round tick. |
 | `src/ServerScriptService/Services/` | ServerScriptService > Services | Long-lived systems: `RoundService` (lobby/round state machine, spawning, elimination, win checks), `AbilityService`, `DisguiseService`, `EffectsService` (visual-only effect player), `BleedService`, `WhiteboardService`. |
 | `src/ServerScriptService/Characters/` | ServerScriptService > Characters | One module per playable character (`Momotaro`, `Otohime`, `GirlA`, `Rokurokubi`, `Bobzilla`, `Okiku`, `Tomino`, `TwoTimePrime`, `Verity`): `.Abilities.<Name>` functions plus `:StartPassives(player)`. The last four are stubs with stats but no abilities yet. |
-| `src/StarterPlayer/StarterPlayerScripts/` | StarterPlayer > StarterPlayerScripts | Client scripts: `HUD`, `Sprint`, `AbilityInput`, `WeaponSwing`, `CharacterPickerUI`, `DisguisePickerUI`, `Whiteboard`, `Incognito`, `HighlightReveal`, `NeckWave`, `CompanionFollower`, `BreachPopup`, `JumpControl`, `SoundPlayer`, `PreloadEffects`, `StoreUI`. |
+| `src/StarterPlayer/StarterPlayerScripts/` | StarterPlayer > StarterPlayerScripts | Client scripts: `HUD`, `Sprint`, `AbilityInput`, `WeaponSwing`, `CharacterPickerUI`, `DisguisePickerUI`, `Whiteboard`, `Incognito`, `HighlightReveal`, `NeckWave`, `CompanionFollower`, `BreachPopup`, `JumpControl`, `SoundPlayer`, `PreloadEffects`, `StoreUI`, `Cutscene` (plays the scripted intro scenes), `GirlAHover` (her float + trailing hatchet arm). |
 | `src/StarterPlayer/StarterCharacterScripts/` | StarterPlayer > StarterCharacterScripts | Scripts that re-run every spawn, notably the empty `Health` script that disables Roblox's passive HP regen (healing only comes from real heals). |
 
 A few load-bearing architecture notes:

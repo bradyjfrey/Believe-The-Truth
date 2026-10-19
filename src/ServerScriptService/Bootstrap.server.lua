@@ -76,6 +76,7 @@ local ShowHighlight         = ensureRemote("ShowHighlight", "RemoteEvent")  -- s
 local PlaySound             = ensureRemote("PlaySound", "RemoteEvent")  -- server -> all clients: "play this sound (each client plays its own copy, so it's reliable)"
 local WhiteboardDraw        = ensureRemote("WhiteboardDraw", "RemoteEvent")  -- both ways: stroke points to the server, broadcast to all clients
 local WhiteboardWipe        = ensureRemote("WhiteboardWipe", "RemoteEvent")  -- server -> all clients: "clear the board"
+local Cutscene              = ensureRemote("Cutscene", "RemoteEvent")  -- server -> ONE client: "play this scene on your screen"
 
 ------------------------------------------------------------------------------
 -- Wire services together
@@ -111,6 +112,13 @@ RoundService:Init({
 AbilityRequest.OnServerEvent:Connect(function(player, abilityName, params)
     if typeof(abilityName) ~= "string" then return end
     AbilityService:Handle(player, abilityName, params)
+end)
+
+-- The F8 test key asks the server to play a scene, so the stage area gets streamed in first.
+Cutscene.OnServerEvent:Connect(function(player, kind, characterName)
+    if next(Constants.Cutscene.DebugKeys) == nil then return end
+    if typeof(kind) ~= "string" or typeof(characterName) ~= "string" then return end
+    RoundService:PlayCutscene(player, kind, characterName)
 end)
 
 NeckWrapMash.OnServerEvent:Connect(function(player)
@@ -167,6 +175,7 @@ local function applyCharacterStats(player, character)
         humanoid.MaxHealth = Constants.GirlA.MaxHealth
         humanoid.Health = humanoid.MaxHealth
         humanoid.WalkSpeed = Constants.Speed.GirlAWalk
+        humanoid.HipHeight = humanoid.HipHeight + Constants.GirlA.Hover.FloatLift
         GirlA:StartPassives(player)
     elseif characterName == Types.Character.Otohime then
         -- Otohime now has her own stats (Constants.Otohime). HP is still a placeholder value the kids
