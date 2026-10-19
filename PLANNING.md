@@ -10,7 +10,7 @@ This is the living spec. When the team changes how something works, update this 
 
 ## How a round works
 
-The Wardens have been summoned to protect cursed Inunaki City. They complete Errands around the map. The Yokai try to kill them. Last team standing wins.
+The Wardens have been summoned to protect cursed Inunaki City. The Yokai try to kill them. The Wardens win by surviving the round timer or killing every Yokai; the Yokai win by killing every Warden.
 
 ### Round flow (this build)
 
@@ -23,7 +23,7 @@ The Wardens have been summoned to protect cursed Inunaki City. They complete Err
 
 ### Death
 
-When a player dies mid-round, they spectate until the round ends. They don't respawn until the next round.
+When a player dies mid-round, they're out of that round: a few seconds on the ground, then they respawn in the lobby as their normal avatar and can hang out or browse the store until the next round starts.
 
 ### Friendly fire
 
@@ -186,7 +186,6 @@ A picker UI opens, and Rokurokubi taps any in-round Warden (including dead ones)
 - Her eyes glow briefly every few seconds, and that's the tell Wardens can spot.
 - Taking any damage breaks the disguise.
 - Using Bite breaks the disguise.
-- She can do Errands like a real Warden, but she can also sabotage them.
 - Inuta the dog still detects her (dogs aren't fooled).
 
 ### Q while disguised: Strangle (no cooldown, drops disguise on use)
@@ -306,7 +305,7 @@ These are set; don't change without a team discussion.
 - **Platform:** PC + mobile (touch buttons via `ContextActionService`)
 - **Polish:** Minimum viable; easy for kids to read and tune
 - **HP:** Roblox's built-in `Humanoid.Health` and `Humanoid:TakeDamage`. No custom HP system.
-- **Round state:** Real `RoundService` (not a stub) with clear extension points for errands and citizens
+- **Round state:** Real `RoundService` (not a stub) with clear extension points for citizens
 - **Disguise target:** Picker UI showing all in-round Wardens
 - **Companions:** Placeholder Parts (brown for Inuta, yellow for Saru). Code checks `ReplicatedStorage/Companions/<name>` first; drop in a Model there and the code uses it instead, no code change needed.
 - **VFX/SFX:** Single `EffectsService` module with empty hook functions. Abilities call `EffectsService:Play("EffectName", position)`. The art team fills in the hooks later.
@@ -353,7 +352,7 @@ src/
 
 Things the team should decide as they playtest. Not blockers for the first build.
 
-- [ ] **Errands:** what does a Warden errand look like? ("Building library books", "Collecting spirits" are candidates)
+- [x] **Errands: DROPPED (Brady, 2026-10-18).** No Warden objective beyond surviving; the round is survive-the-timer or kill the Yokai. Don't re-propose.
 - [ ] **Citizens:** non-player NPCs the Yokai also target
 - [ ] **Real shop & coin economy:** Girl A is gated by ownership in the long run
 - [ ] **Real Hotspot placements:** replace the 4 placeholder spawns

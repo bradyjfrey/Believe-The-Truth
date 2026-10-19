@@ -12,8 +12,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
--- Disable Roblox's automatic respawn so dead players spectate until the next
--- round. RoundService calls player:LoadCharacter() when it's time to respawn.
+-- Disable Roblox's automatic respawn; RoundService owns every spawn (eliminated players go
+-- back to the lobby after a short delay, see RoundService.watchForElimination).
 Players.CharacterAutoLoads = false
 
 -- Seed math.random with the current time so Yokai picks don't pattern-repeat
@@ -29,7 +29,7 @@ local RoundService = require(ServerScriptService.Services.RoundService)
 local AbilityService = require(ServerScriptService.Services.AbilityService)
 local DisguiseService = require(ServerScriptService.Services.DisguiseService)
 local WhiteboardService = require(ServerScriptService.Services.WhiteboardService)
--- (BleedService and EffectsService run themselves — no init needed.)
+-- (BleedService and EffectsService run themselves, no init needed.)
 
 local Momotaro = require(ServerScriptService.Characters.Momotaro)
 local Rokurokubi = require(ServerScriptService.Characters.Rokurokubi)

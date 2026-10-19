@@ -5,7 +5,6 @@
 --   * Ending  — round just finished, short pause before back to Lobby
 --
 -- Extension points for the team (search for "EXTENSION POINT" below):
---   * Errands — Wardens win by completing errands (not implemented yet)
 --   * Citizens — non-player NPCs the Yokai also kill (not implemented yet)
 --   * Per-player character ownership — right now everyone owns every character
 

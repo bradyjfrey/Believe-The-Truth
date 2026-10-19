@@ -10,48 +10,54 @@ placing it, playing it, and cleaning it up.
 
 ---
 
-## ⭐ Top 3 things I need:
+## ⭐ Top things I need:
 
-- [ ] 🔊 **Stomach growl sound** for Rokurokubi's creepy "she's close..." warning. Find one
+- [ ] 🖥️ **Girl A's computer screen** prop for her intro cutscene (she climbs out of it)
+- [ ] 🚪 **Tomino's asylum doorway** prop for his intro cutscene
+- [ ] 🧠 **Kits for Two Time Prime, Verity and Okiku**: what are their moves? Keys, damage, cooldowns, like you did for Tomino.
+
+## Older asks:
+
+- [x] 🔊 **Stomach growl sound** (done) for Rokurokubi's creepy "she's close..." warning. Find one
       on the Creator Store like you did the dog bark, and send me the asset ID.
-- [ ] 💥 **`MomotaroBananaSlip`**, What happens when someone slips? Stars,
+- [x] 💥 **`MomotaroBananaSlip`**, What happens when someone slips? Stars,
       dust cloud, cartoon "bonk", something else? 
 - [ ] 🍡 **Kibi dango stick**: a small handheld dumpling skewer (3 dumplings on a stick).
       Momotaro pulls it out to heal himself or feed a teammate.
 
 ## Effects for abilities that already work (they're invisible right now!):
 
-- [ ] **`MomotaroSaruEat`**: munching burst where Saru eats. Crumbs, banana bits, sparkle.
-- [ ] **`MomotaroBananaDrop`**: small poof/plop where the peel lands
-- [ ] **`MomotaroKatanaWindup`**: a glint or charge while he winds up
-- [ ] **`MomotaroKatanaSwing`**: speed streak for the dash
-- [ ] **`MomotaroKatanaHit`**: impact flash when the stun lands
-- [ ] **`MomotaroInutaDeploy`**: dust puff when the dogs drop in
-- [ ] **`MomotaroInutaBark`**: a visual bark, like a ring or burst from the muzzle
-- [ ] **`MomotaroBirdsEyeView`**: something glowy on Kijiro when his reveal pings
+- [x] **`MomotaroSaruEat`**: munching burst where Saru eats. Crumbs, banana bits, sparkle.
+- [x] **`MomotaroBananaDrop`**: small poof/plop where the peel lands
+- [x] **`MomotaroKatanaWindup`**: a glint or charge while he winds up
+- [x] **`MomotaroKatanaSwing`**: speed streak for the dash
+- [x] **`MomotaroKatanaHit`**: impact flash when the stun lands
+- [x] **`MomotaroInutaDeploy`**: dust puff when the dogs drop in
+- [x] **`MomotaroInutaBark`**: a visual bark, like a ring or burst from the muzzle
+- [~] **`MomotaroBirdsEyeView`** (skipped on purpose: a public effect would tip off the Yokai): something glowy on Kijiro when his reveal pings
 - [x] **`GirlASlashHit`** (done: Claude built the visual on top of your sound): impact when the hatchet actually connects (the swing VFX exists)
 
 ## Effects for abilities coming soon (build in parallel):
 
-- [ ] **`MomotaroKibiDangoSelf`**: heal sparkles when he eats the dango
-- [ ] **`MomotaroKibiDangoTeammate`**: heal sparkles when he shares it
-- [ ] **`GirlAStrayBladeAim`**: glint while she aims the cleaver
-- [ ] **`GirlAStrayBladeThrow`**: the cleaver flying, spinning blade look
-- [ ] **`GirlAStrayBladeImpact`**: splash when it hits
-- [ ] **`GirlAIncognitoStart`**: vanish smoke
-- [ ] **`GirlAIncognitoEnd`**: reappear smoke
-- [ ] **`GirlAHotspotTeleport`**: teleport flash
-- [ ] **`RokurokubiBite`**: bite impact
-- [ ] **`RokurokubiNeckWrapWindup`**: her neck coiling up to strike
-- [ ] **`RokurokubiNeckWrapHit`**: the grab landing
-- [ ] **`RokurokubiStrangle`**: the choke (dark, scary)
-- [ ] **`RokurokubiDisguiseChargeUp`**: transformation building up
-- [ ] **`RokurokubiDisguiseApplied`**: smoke or shimmer as the disguise takes hold
-- [ ] **`RokurokubiDisguiseEnded`**: the disguise breaking
+- [x] **`MomotaroKibiDangoSelf`**: heal sparkles when he eats the dango
+- [x] **`MomotaroKibiDangoTeammate`**: heal sparkles when he shares it
+- [x] **`GirlAStrayBladeAim`**: glint while she aims the cleaver
+- [x] **`GirlAStrayBladeThrow`**: the cleaver flying, spinning blade look
+- [x] **`GirlAStrayBladeImpact`**: splash when it hits
+- [x] **`GirlAIncognitoStart`**: vanish smoke
+- [x] **`GirlAIncognitoEnd`**: reappear smoke
+- [x] **`GirlAHotspotTeleport`**: teleport flash
+- [x] **`RokurokubiBite`**: bite impact
+- [x] **`RokurokubiNeckWrapWindup`**: her neck coiling up to strike
+- [x] **`RokurokubiNeckWrapHit`**: the grab landing
+- [x] **`RokurokubiStrangle`**: the choke (dark, scary)
+- [x] **`RokurokubiDisguiseChargeUp`**: transformation building up
+- [x] **`RokurokubiDisguiseApplied`**: smoke or shimmer as the disguise takes hold
+- [x] **`RokurokubiDisguiseEnded`**: the disguise breaking
 
 ## Props (models):
 
-- [ ] **Cleaver**: Girl A's throwable blade for Stray Blade (restyle her hatchet if you want)
+- [x] **Cleaver**: hatchet restyled (the thrown blade will reuse it)
 
 ## More sounds (optional, asset IDs from the Creator Store):
 
