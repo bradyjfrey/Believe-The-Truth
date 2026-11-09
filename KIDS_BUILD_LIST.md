@@ -12,9 +12,27 @@ placing it, playing it, and cleaning it up.
 
 ## ⭐ Top things I need:
 
-- [ ] 🖥️ **Girl A's computer screen** prop for her intro cutscene (she climbs out of it)
-- [ ] 🚪 **Tomino's asylum doorway** prop for his intro cutscene
-- [ ] 🧠 **Kits for Two Time Prime, Verity and Okiku**: what are their moves? Keys, damage, cooldowns, like you did for Tomino.
+- [x] 🖥️ **Girl A's computer screen** prop for her intro cutscene (she climbs out of it)
+- [x] 🚪 **Tomino's asylum doorway** prop for his intro cutscene
+- [x] 🧠 **Okiku's kit** (done!)
+- [ ] 🧠 **Kits for Two Time Prime and Verity**: what are their moves? Keys, damage, cooldowns, like you did for Tomino and Okiku.
+
+## 🌊 Otohime's new kit: ALL art first, then Dad codes it
+
+Fiona's version is the one we're building. **Nothing gets coded until every item below is built.**
+
+- [ ] 🐢 **`OtohimeShellout`**: the sea-turtle-shell shield that pops up when she'd have died
+- [ ] 🌿 **`OtohimeSeaweedWrap`**: her seaweed ribbon wrapping the Yokai (lasts 5 seconds)
+- [ ] ⛲ **`OtohimeHealingSpring`**: the water spring on the ground (about 10 studs across, lasts 20 seconds)
+- [ ] 🥀 **`OtohimeHealingSpringDried`**: the spring drying up when a Yokai steps in it
+- [ ] 🌊 **`OtohimeHighTide`**: the wave she sends forward (about 20 studs)
+
+## 🎎 Okiku's effects (check these names match what you built)
+
+- [ ] **`OkikuTeethJab`**: her bite landing
+- [ ] **`OkikuScreech`**: the screech
+- [ ] **`OkikuClawThrow`**: the claws flying
+- [ ] **`OkikuClawThrowHit`**: the claws hitting
 
 ## Older asks:
 
@@ -22,7 +40,7 @@ placing it, playing it, and cleaning it up.
       on the Creator Store like you did the dog bark, and send me the asset ID.
 - [x] 💥 **`MomotaroBananaSlip`**, What happens when someone slips? Stars,
       dust cloud, cartoon "bonk", something else? 
-- [ ] 🍡 **Kibi dango stick**: a small handheld dumpling skewer (3 dumplings on a stick).
+- [x] 🍡 **Kibi dango stick**: a small handheld dumpling skewer (3 dumplings on a stick).
       Momotaro pulls it out to heal himself or feed a teammate.
 
 ## Effects for abilities that already work (they're invisible right now!):
@@ -61,11 +79,11 @@ placing it, playing it, and cleaning it up.
 
 ## More sounds (optional, asset IDs from the Creator Store):
 
-- [ ] Bite sound for Rokurokubi
-- [ ] Strangle/struggle sound for Rokurokubi
+- [x] Bite sound for Rokurokubi
+- [x] Strangle/struggle sound for Rokurokubi
 
 ## Things that might be cool later: 
 
-- [ ] **Saru's munch animation**: he's rigged and ready, great first Animation Editor project
+- [x] **Saru's munch animation**: he's rigged and ready, great first Animation Editor project
 - [ ] Idle motion ideas for the guard dogs (breathing, head bob, jaw flap on bark)
 - [ ] Skin designs for **Token** & **Toastful** (for the skin store, way later)
